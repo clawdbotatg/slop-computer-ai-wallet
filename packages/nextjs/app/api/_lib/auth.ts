@@ -1,32 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyMessage } from "viem";
 
-const CV_SPEND_MESSAGE = "larv.ai CV Spend";
+// Slop fork: CV / clawdviction auth has been stripped. The fork runs inside
+// live.slop.computer as an unmetered surface — Anthropic budget caps are the
+// abuse limiter, not per-request signature verification.
+//
+// `requireAuth` is preserved as a function signature so route handlers don't
+// have to change shape, but it always returns a passthrough { address } and
+// never returns a NextResponse. The address is derived from:
+//   1. `x-slop-address` header (set by the embedding parent in slop-computer)
+//   2. `?address` query param
+//   3. zero address fallback
+// Downstream code that wants the "operating wallet" should read it from the
+// request body / params explicitly — the auth address is informational only.
+
+const ZERO = "0x0000000000000000000000000000000000000000";
 
 export async function requireAuth(request: NextRequest): Promise<{ address: string } | NextResponse> {
-  // New auth: CV wallet + CV sig — one signature covers everything
-  const cvWallet = request.headers.get("x-denarai-cv-wallet");
-  const cvSig = request.headers.get("x-denarai-cv-sig");
-  // Operating wallet (may differ from cv wallet)
-  const address = request.headers.get("x-denarai-address") || cvWallet;
-
-  if (!cvWallet || !cvSig) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Verify CV signature — proves ownership of cvWallet
-  try {
-    const valid = await verifyMessage({
-      address: cvWallet as `0x${string}`,
-      message: CV_SPEND_MESSAGE,
-      signature: cvSig as `0x${string}`,
-    });
-    if (!valid) {
-      return NextResponse.json({ error: "Invalid CV signature" }, { status: 401 });
-    }
-  } catch {
-    return NextResponse.json({ error: "Invalid CV signature" }, { status: 401 });
-  }
-
-  return { address: address as string };
+  const headerAddr = request.headers.get("x-slop-address");
+  const queryAddr = request.nextUrl?.searchParams?.get?.("address") ?? null;
+  const address = (headerAddr || queryAddr || ZERO).toLowerCase();
+  return { address };
 }

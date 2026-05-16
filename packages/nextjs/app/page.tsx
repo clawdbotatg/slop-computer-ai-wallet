@@ -10,7 +10,6 @@ import GoldParticles from "~~/components/GoldParticles";
 import MultiStepTransactionCard from "~~/components/MultiStepTransactionCard";
 import TransactionCard from "~~/components/TransactionCard";
 import { RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
-import { useCvAuth } from "~~/hooks/useCvAuth";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -130,34 +129,20 @@ const MAX_DISPLAY_ASSETS = 8;
 
 const Home: NextPage = () => {
   const { address, isConnected } = useAccount();
-  const { cvSignature, cvWallet, hasCvSig, isCvSigning, cvBalance, updateCvBalance, fetchCvBalance, signCv } =
-    useCvAuth();
 
-  // Auth is now just the CV sig — no separate signing step
-  const isAuthed = hasCvSig && !!cvSignature;
-  const authHeaders = useMemo(
-    () =>
-      isAuthed && cvWallet && cvSignature
-        ? {
-            "x-denarai-cv-wallet": cvWallet,
-            "x-denarai-cv-sig": cvSignature,
-            "x-denarai-address": address || cvWallet,
-          }
-        : null,
-    [isAuthed, cvWallet, cvSignature, address],
-  );
+  // Slop fork: CV auth stripped. Forward an x-slop-address header so the
+  // backend can log + correlate requests, but no signature is required.
+  const isAuthed = isConnected;
+  const authHeaders = useMemo<Record<string, string>>(() => {
+    const h: Record<string, string> = {};
+    if (address) h["x-slop-address"] = address;
+    return h;
+  }, [address]);
   const { openModal } = useDetailModal();
   const [message, setMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-
-  // Single auto-sign trigger — only here, not in the hook, so it fires exactly once ever
-  useEffect(() => {
-    if (isConnected && !cvSignature && !hasCvSig && !isCvSigning) {
-      signCv();
-    }
-  }, [isConnected, cvSignature, hasCvSig, isCvSigning, signCv]);
 
   const STORAGE_KEY = address ? `clawd-chat-${address.toLowerCase()}` : null;
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
@@ -234,56 +219,15 @@ const Home: NextPage = () => {
     }
   }, [messages, isProcessing]);
 
-  const CV_COST_PAGE_LOAD = 5_000;
-  // cvCharged persists across wallet switches — we charge once per session, not per wallet
-  const [cvCharged, setCvCharged] = useState(false);
-  const [cvChargeError, setCvChargeError] = useState<string | null>(null);
-
-  // Charge CV once per session as soon as we have a sig — does NOT block portfolio on failure
-  useEffect(() => {
-    if (!address || !authHeaders || !cvSignature || !cvWallet || cvCharged) return;
-
-    const charge = async () => {
-      try {
-        const cvRes = await fetch("/api/cv/spend", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...authHeaders },
-          body: JSON.stringify({ wallet: cvWallet, signature: cvSignature, amount: CV_COST_PAGE_LOAD }),
-        });
-        const cvData = await cvRes.json();
-        if (cvData.success) {
-          if (typeof cvData.newBalance === "number") updateCvBalance(cvData.newBalance);
-          fetchCvBalance(cvWallet);
-          setCvCharged(true);
-          setCvChargeError(null);
-        } else {
-          // Only hard-block if truly insufficient CV (402) — other errors let the app load
-          if (cvRes.status === 402) {
-            setCvChargeError(cvData.error || "Insufficient CV balance");
-          } else {
-            // Soft fail — let the app load, log the issue
-            console.error("[CV charge soft-fail]", cvData.error);
-            setCvCharged(true);
-          }
-          fetchCvBalance(cvWallet);
-        }
-      } catch {
-        // Network error — let the app load rather than hard-block
-        console.error("[CV charge network error]");
-        setCvCharged(true);
-      }
-    };
-
-    charge();
-  }, [address, authHeaders, cvSignature, cvWallet, cvCharged, updateCvBalance, fetchCvBalance]);
+  // Slop fork: CV charge effect removed. App runs unmetered.
 
   const fetchPortfolio = useCallback(async () => {
-    if (!address || !authHeaders || (!cvCharged && !cvSignature)) return;
+    if (!address) return;
     setIsLoadingPortfolio(true);
 
     try {
       const res = await fetch(`/api/portfolio?address=${address}`, {
-        headers: { ...authHeaders },
+        headers: { ...(authHeaders ?? {}) },
       });
       const data = await res.json();
       if (data.error) {
@@ -301,13 +245,13 @@ const Home: NextPage = () => {
     } finally {
       setIsLoadingPortfolio(false);
     }
-  }, [address, authHeaders, cvCharged, cvSignature]);
+  }, [address, authHeaders]);
 
   const fetchActivity = useCallback(async () => {
-    if (!address || !authHeaders) return;
+    if (!address) return;
     try {
       const res = await fetch(`/api/activity?address=${address}`, {
-        headers: { ...authHeaders },
+        headers: { ...(authHeaders ?? {}) },
       });
       const data = await res.json();
       setActivity(data.items || []);
@@ -383,7 +327,7 @@ const Home: NextPage = () => {
   // ─── handleSubmit ────────────────────────────────────────────────────────
 
   const handleSubmit = async () => {
-    if (!message.trim() || !address || !isAuthed || !hasCvSig) return;
+    if (!message.trim() || !address || !isAuthed) return;
 
     const userMsg: ChatMessage = { role: "user", content: message, timestamp: Date.now() };
     setMessages(prev => [...prev, userMsg]);
@@ -393,14 +337,12 @@ const Home: NextPage = () => {
     try {
       const res = await fetch("/api/intent", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders },
+        headers: { "Content-Type": "application/json", ...(authHeaders ?? {}) },
         body: JSON.stringify({
           message,
           address,
           portfolio,
           defiPositions,
-          cvSignature,
-          cvWallet, // the address larv.ai should charge (may differ from operating wallet)
           recentMessages: messages.slice(-6).map(m => ({ role: m.role, content: m.content })),
           recentActivity: activity.slice(0, 50),
         }),
@@ -482,40 +424,6 @@ const Home: NextPage = () => {
               </p>
               <div className="h-px w-48" style={{ backgroundColor: "rgba(201, 168, 76, 0.3)" }} />
               <RainbowKitCustomConnectButton />
-            </div>
-          </div>
-        ) : cvChargeError ? (
-          // CV charge failed — block the app
-          <div
-            className="fixed inset-0 flex flex-col items-center justify-center gap-6"
-            style={{ backgroundColor: "#0a0a0a" }}
-          >
-            <GoldParticles foreground={true} />
-            <div className="relative z-10 flex flex-col items-center gap-4 text-center px-6 max-w-sm">
-              <span style={{ fontSize: "3rem" }}>⚠️</span>
-              <h2
-                className="font-[family-name:var(--font-cinzel)] text-2xl font-bold tracking-[0.15em]"
-                style={{ color: "#C9A84C" }}
-              >
-                Insufficient CV
-              </h2>
-              <p className="text-sm" style={{ color: "#8A8578", lineHeight: "1.6" }}>
-                Denarai costs <strong style={{ color: "#E8E4DC" }}>5,000 CV</strong> per page load. Stake $CLAWD on{" "}
-                <a
-                  href="https://larv.ai/stake"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "#C9A84C", textDecoration: "underline" }}
-                >
-                  larv.ai
-                </a>{" "}
-                to earn more CV.
-              </p>
-              {cvBalance !== null && (
-                <p className="text-xs" style={{ color: "#8A8578" }}>
-                  Your balance: <strong style={{ color: "#E8E4DC" }}>{cvBalance.toLocaleString()} CV</strong>
-                </p>
-              )}
             </div>
           </div>
         ) : (
@@ -956,11 +864,9 @@ const Home: NextPage = () => {
                     <input
                       type="text"
                       placeholder={
-                        mounted && isCvSigning
-                          ? "Please sign the message in your wallet..."
-                          : mounted && !isAuthed
-                            ? "Connect your wallet to continue"
-                            : "Your wealth awaits instruction. What is your will, ser?"
+                        mounted && !isAuthed
+                          ? "Connect your wallet to continue"
+                          : "Ask your wallet to do something — send, swap, bridge, check balances…"
                       }
                       className="flex-1 text-base px-4 py-2"
                       style={{

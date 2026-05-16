@@ -8,7 +8,32 @@
   --animate-fade-in: fadeIn 0.6s ease-out forwards;
 }
 
-/* All interactive elements get pointer cursor */
+/* ─── Slop tokens (mirrors live.slop.computer) ───────────────────────────── */
+:root {
+  --slop-bg: #06030d;
+  --slop-base: radial-gradient(circle at 50% 30%, #14091e 0%, #06030d 70%, #000 100%);
+  --slop-panel: #0a0f24;
+  --slop-panel-glass: linear-gradient(180deg, rgba(10, 15, 36, 0.95) 0%, rgba(6, 8, 24, 0.92) 100%);
+  --slop-panel-light: #1a1638;
+  --slop-bevel-light: rgba(255, 255, 255, 0.18);
+  --slop-bevel-dark: #000;
+  --slop-text: #e8e0ff;
+  --slop-text-muted: #7878a0;
+  --slop-magenta: #ff3ec9;
+  --slop-magenta-dim: #c41a96;
+  --slop-purple: #7c4dff;
+  --slop-cyan: #3fcfff;
+  --slop-lime: #bcff5b;
+  --slop-amber: #ffae00;
+  --slop-red: #ff5577;
+  --slop-accent: var(--slop-magenta);
+  --slop-accent-active: var(--slop-magenta-dim);
+  --slop-live: var(--slop-lime);
+  --slop-font-display: var(--font-silkscreen), "Courier New", ui-monospace, "Menlo", monospace;
+  --slop-font-body: var(--font-silkscreen), "Courier New", ui-monospace, "Menlo", monospace;
+  --slop-font-mono: var(--font-jetbrains), ui-monospace, "Menlo", "Monaco", "Consolas", monospace;
+}
+
 button:not(:disabled),
 [role="button"]:not(:disabled),
 a[href] {
@@ -27,28 +52,28 @@ a[href] {
 }
 
 @plugin "daisyui" {
-  themes: classical;
+  themes: slop;
 }
 
 @plugin "daisyui/theme" {
-  name: "classical";
+  name: "slop";
 
-  --color-primary: #c9a84c;
-  --color-primary-content: #0a0a0a;
-  --color-secondary: #111111;
-  --color-secondary-content: #e8e4dc;
-  --color-accent: #c9a84c;
-  --color-accent-content: #0a0a0a;
-  --color-neutral: #e8e4dc;
-  --color-neutral-content: #0a0a0a;
-  --color-base-100: #0a0a0a;
-  --color-base-200: #111111;
-  --color-base-300: #1a1a1a;
-  --color-base-content: #e8e4dc;
-  --color-info: #c9a84c;
-  --color-success: #c9a84c;
-  --color-warning: #c9a84c;
-  --color-error: #9b3d3d;
+  --color-primary: #ff3ec9;
+  --color-primary-content: #06030d;
+  --color-secondary: #0a0f24;
+  --color-secondary-content: #e8e0ff;
+  --color-accent: #3fcfff;
+  --color-accent-content: #06030d;
+  --color-neutral: #e8e0ff;
+  --color-neutral-content: #06030d;
+  --color-base-100: #06030d;
+  --color-base-200: #0a0f24;
+  --color-base-300: #1a1638;
+  --color-base-content: #e8e0ff;
+  --color-info: #3fcfff;
+  --color-success: #bcff5b;
+  --color-warning: #ffae00;
+  --color-error: #ff5577;
 
   --radius-field: 0;
   --radius-box: 0;
@@ -62,7 +87,7 @@ a[href] {
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: rgba(201, 168, 76, 0.15);
+    border-color: rgba(255, 62, 201, 0.18);
   }
 
   p {
@@ -71,10 +96,11 @@ a[href] {
 
   body {
     min-height: 100vh;
-    background-color: #0a0a0a;
-    color: #e8e4dc;
-    font-family: var(--font-inter), system-ui, sans-serif;
+    background: var(--slop-base);
+    color: var(--slop-text);
+    font-family: var(--slop-font-body);
     -webkit-font-smoothing: antialiased;
+    letter-spacing: 0.02em;
   }
 
   h1,
@@ -83,20 +109,24 @@ a[href] {
   h4 {
     margin-bottom: 0.5rem;
     line-height: 1.1;
-    font-family: var(--font-cinzel), "Times New Roman", serif;
-    color: #c9a84c;
+    font-family: var(--slop-font-display);
+    color: var(--slop-magenta);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 }
 
 :root,
 [data-theme] {
-  background: #0a0a0a;
+  background: var(--slop-bg);
 }
 
-/* Kill all shadows, rounded corners */
 .btn {
   @apply shadow-none;
   border-radius: 0 !important;
+  font-family: var(--slop-font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .btn.btn-ghost {
@@ -105,134 +135,120 @@ a[href] {
 
 .link {
   text-underline-offset: 2px;
-  color: #c9a84c;
+  color: var(--slop-magenta);
 }
 
 .link:hover {
   opacity: 80%;
 }
 
-/* Override DaisyUI inputs to classical style */
 input,
 textarea,
 select {
   border-radius: 0 !important;
-  background-color: #111111 !important;
-  border-color: rgba(201, 168, 76, 0.15) !important;
-  color: #e8e4dc !important;
+  background-color: var(--slop-panel) !important;
+  border-color: rgba(255, 62, 201, 0.18) !important;
+  color: var(--slop-text) !important;
+  font-family: var(--slop-font-body) !important;
 }
 
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: rgba(201, 168, 76, 0.4) !important;
+  border-color: rgba(255, 62, 201, 0.5) !important;
   outline: none !important;
-  box-shadow: none !important;
+  box-shadow: 0 0 0 1px rgba(255, 62, 201, 0.3) !important;
 }
 
 input::placeholder {
-  color: #8a8578 !important;
+  color: var(--slop-text-muted) !important;
 }
 
-/* Modal overrides */
 .modal-box {
   border-radius: 0 !important;
-  background-color: #111111 !important;
-  border: 1px solid rgba(201, 168, 76, 0.15) !important;
+  background-color: var(--slop-panel) !important;
+  border: 1px solid rgba(255, 62, 201, 0.25) !important;
   box-shadow: none !important;
 }
 
-/* Badge overrides */
 .badge {
   border-radius: 0 !important;
 }
 
-/* Alert overrides */
 .alert {
   border-radius: 0 !important;
 }
 
-/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0a0a0a;
+  background: var(--slop-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(201, 168, 76, 0.2);
+  background: rgba(255, 62, 201, 0.3);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(201, 168, 76, 0.4);
+  background: rgba(255, 62, 201, 0.55);
 }
 
-/* ─── Gold bar button — shared class for all CTAs ───────────────────────── */
+/* ─── Slop primary CTA — replaces the gold-btn from the denar fork ──────── */
 .gold-btn {
   --mx: 50%;
   --my: 50%;
   position: relative;
-  /* Layer 1: mouse-tracking light source */
-  /* Layer 2: gold bar bands — horizontal striations like real bullion */
   background:
     radial-gradient(
-      circle 1200px at var(--mx) var(--my),
-      rgba(255, 252, 180, 0.55) 0%,
-      rgba(255, 230, 100, 0.2) 18%,
-      transparent 45%
+      circle 600px at var(--mx) var(--my),
+      rgba(255, 95, 220, 0.7) 0%,
+      rgba(255, 62, 201, 0.35) 20%,
+      transparent 50%
     ),
     linear-gradient(
-      160deg,
-      #b8860b 0%,
-      #c9962a 8%,
-      #f5d060 18%,
-      #fff0a0 22%,
-      #e8c040 28%,
-      #c9a030 38%,
-      #a07020 48%,
-      #c9a840 55%,
-      #f0d060 62%,
-      #fff5b0 66%,
-      #d4a830 72%,
-      #a07828 80%,
-      #c9a84c 90%,
-      #e8c84a 100%
+      135deg,
+      #ff3ec9 0%,
+      #c41a96 50%,
+      #7c4dff 100%
     );
   transition: filter 0.06s ease, transform 0.1s ease;
   box-shadow:
-    inset 0 1px 0 rgba(255, 248, 160, 0.6),
-    inset 0 -2px 0 rgba(60, 35, 0, 0.4),
-    inset 1px 0 0 rgba(255, 240, 120, 0.2),
-    inset -1px 0 0 rgba(60, 35, 0, 0.2),
-    0 2px 12px rgba(201, 168, 76, 0.4);
-  color: #1a0f00 !important;
-  text-shadow: 0 1px 0 rgba(255, 240, 120, 0.4);
-  font-weight: 600;
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35),
+    0 2px 12px rgba(255, 62, 201, 0.35);
+  color: #06030d !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+  font-family: var(--slop-font-display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   cursor: pointer;
+  border-radius: 0;
 }
 
 .gold-btn:hover:not(:disabled) {
-  filter: brightness(1.08) contrast(1.02);
+  filter: brightness(1.1) contrast(1.02);
   transform: translateY(-1px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 248, 160, 0.7),
-    inset 0 -2px 0 rgba(60, 35, 0, 0.4),
-    0 5px 20px rgba(201, 168, 76, 0.55),
-    0 2px 8px rgba(255, 220, 80, 0.3);
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35),
+    0 5px 20px rgba(255, 62, 201, 0.5),
+    0 2px 8px rgba(124, 77, 255, 0.3);
 }
 
 .gold-btn:active:not(:disabled) {
   transform: translateY(1px);
-  filter: brightness(0.9) contrast(1.05);
+  filter: brightness(0.92) contrast(1.05);
   box-shadow:
-    inset 0 2px 6px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(60, 35, 0, 0.3);
+    inset 0 2px 6px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(0, 0, 0, 0.3);
 }
 
 .gold-btn:disabled {
   cursor: not-allowed;
-  filter: brightness(0.7) saturate(0.7);
+  filter: brightness(0.55) saturate(0.5);
   transform: none !important;
 }

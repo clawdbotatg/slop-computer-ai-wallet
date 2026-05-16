@@ -1432,21 +1432,7 @@ export async function POST(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const {
-      message,
-      address,
-      portfolio,
-      defiPositions,
-      chainId,
-      recentMessages,
-      recentActivity,
-      cvSignature,
-      cvWallet,
-    } = await req.json();
-
-    // cvWallet is the address that signed the CV message (may differ from operating wallet `address`)
-    // larv.ai recovers the signer from the signature — we must use cvWallet for spend calls
-    const cvSpendWallet: string = cvWallet || address;
+    const { message, address, portfolio, defiPositions, chainId, recentMessages, recentActivity } = await req.json();
 
     if (!process.env.VENICE_API_KEY) {
       return NextResponse.json(
@@ -1454,49 +1440,8 @@ export async function POST(req: NextRequest) {
         { status: 500 },
       );
     }
-
-    // ─── CV charge (25,000 CV per request) ───────────────────────────────────
-    const CV_COST_PER_REQUEST = 25_000;
-    if (!cvSignature) {
-      return NextResponse.json(
-        { type: "chat", message: "⚠️ CV signature required to use Denarai. Please reconnect your wallet." },
-        { status: 402 },
-      );
-    }
-
-    {
-      const cvRes = await fetch("https://larv.ai/api/cv/spend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          wallet: cvSpendWallet,
-          signature: cvSignature,
-          secret: process.env.CV_SPEND_SECRET,
-          amount: CV_COST_PER_REQUEST,
-        }),
-      });
-      const cvData = await cvRes.json();
-      if (!cvData.success) {
-        const isInsufficient = cvRes.status === 402;
-        const isBadSig =
-          cvRes.status === 400 || (cvData.error && String(cvData.error).toLowerCase().includes("signature"));
-        let msg: string;
-        if (isBadSig) {
-          msg = `⚠️ CV signature invalid or expired. Please disconnect and reconnect your wallet to re-sign, then try again.`;
-        } else if (isInsufficient) {
-          msg = `⚠️ Insufficient CV balance. Each request costs ${CV_COST_PER_REQUEST.toLocaleString()} CV. Your stored signature may be for a different wallet — try disconnecting and reconnecting. Otherwise, stake more CLAWD on [larv.ai](https://larv.ai) to earn more CV.`;
-        } else {
-          msg = `⚠️ CV charge failed: ${cvData.error || "unknown error"} (status ${cvRes.status})`;
-        }
-        console.error("[CV spend failed]", {
-          status: cvRes.status,
-          error: cvData.error,
-          cvSpendWallet,
-          operatingWallet: address,
-        });
-        return NextResponse.json({ type: "chat", message: msg }, { status: cvRes.status });
-      }
-    }
+    // CV (clawdviction) credits removed — this fork runs unmetered inside
+    // live.slop.computer. Anthropic/Venice budget caps are the abuse limiter.
 
     const userChainId = chainId ?? 1;
 
@@ -1575,18 +1520,8 @@ export async function POST(req: NextRequest) {
       : "";
 
     // recentMessages is passed as proper OpenAI message objects below — not embedded in the prompt
-
-    // Fetch CV balance server-side so the AI always knows it
-    let cvBalanceSummary = "";
-    try {
-      const cvBalRes = await fetch(`https://larv.ai/api/cv/balance?address=${address}`);
-      const cvBalData = await cvBalRes.json();
-      if (cvBalData.success && typeof cvBalData.balance === "number") {
-        cvBalanceSummary = `\n\nCV (ClawdViction) Balance: ${cvBalData.balance.toLocaleString("en-US")} CV (off-chain governance score earned by staking $CLAWD at larv.ai)`;
-      }
-    } catch {
-      // non-fatal — skip CV balance if fetch fails
-    }
+    // CV balance summary removed in slop fork — no clawdviction context injected.
+    const cvBalanceSummary = "";
 
     // userPrompt is no longer used — wallet context is injected as a priming message pair in loopMessages below
 
