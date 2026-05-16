@@ -10,6 +10,7 @@ import GoldParticles from "~~/components/GoldParticles";
 import MultiStepTransactionCard from "~~/components/MultiStepTransactionCard";
 import TransactionCard from "~~/components/TransactionCard";
 import { RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
+import { useEmbeddedContext } from "~~/hooks/useEmbeddedContext";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -128,7 +129,14 @@ const MAX_DISPLAY_ASSETS = 8;
 // ─── Component ───────────────────────────────────────────────────────────────
 
 const Home: NextPage = () => {
-  const { address, isConnected } = useAccount();
+  const { address: wagmiAddress, isConnected: wagmiConnected } = useAccount();
+  const embedded = useEmbeddedContext();
+
+  // When embedded inside live.slop.computer the multisig address replaces
+  // the EOA — portfolio + intent calls run against the multisig, signing
+  // is bridged via postMessage in Phase 3. Standalone mode unchanged.
+  const address = (embedded.multisigAddress ?? wagmiAddress) as `0x${string}` | undefined;
+  const isConnected = embedded.embedded ? !!embedded.multisigAddress : wagmiConnected;
 
   // Slop fork: CV auth stripped. Forward an x-slop-address header so the
   // backend can log + correlate requests, but no signature is required.
@@ -343,6 +351,7 @@ const Home: NextPage = () => {
           address,
           portfolio,
           defiPositions,
+          chainId: embedded.chainId ?? undefined,
           recentMessages: messages.slice(-6).map(m => ({ role: m.role, content: m.content })),
           recentActivity: activity.slice(0, 50),
         }),
@@ -395,34 +404,27 @@ const Home: NextPage = () => {
   // ─── Render ──────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex items-center flex-col flex-grow pt-2" style={{ backgroundColor: "#0a0a0a" }}>
+    <div className="flex items-center flex-col flex-grow pt-2" style={{ backgroundColor: "var(--slop-bg, #06030d)" }}>
       <div className="px-5 w-full max-w-7xl">
         {!isConnected ? (
           <div
             className="fixed inset-0 flex flex-col items-center justify-center gap-8"
-            style={{
-              backgroundImage: "url('/coins-bg.jpg')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
+            style={{ background: "var(--slop-base)" }}
           >
-            {/* Dark overlay so text is readable */}
-            <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.55)" }} />
-            <GoldParticles foreground={true} />
             <div className="relative z-10 flex flex-col items-center gap-6">
               <h1
-                className="font-[family-name:var(--font-cinzel)] text-5xl sm:text-7xl font-bold tracking-[0.3em] text-center"
-                style={{ color: "#C9A84C", textShadow: "0 2px 24px rgba(0,0,0,0.8)" }}
+                className="font-[family-name:var(--font-silkscreen)] text-4xl sm:text-6xl font-bold tracking-[0.2em] text-center"
+                style={{ color: "var(--slop-magenta)", textShadow: "0 0 24px rgba(255,62,201,0.45)" }}
               >
-                DENARAI
+                SLOP/AI WALLET
               </h1>
               <p
-                className="font-[family-name:var(--font-cinzel)] text-lg sm:text-xl tracking-[0.25em] text-center"
-                style={{ color: "#E8E4DC", textShadow: "0 1px 12px rgba(0,0,0,0.9)" }}
+                className="font-[family-name:var(--font-silkscreen)] text-base sm:text-lg tracking-[0.18em] text-center"
+                style={{ color: "var(--slop-text-muted)" }}
               >
-                talk to your coins
+                talk to your multisig
               </p>
-              <div className="h-px w-48" style={{ backgroundColor: "rgba(201, 168, 76, 0.3)" }} />
+              <div className="h-px w-48" style={{ backgroundColor: "rgba(255, 62, 201, 0.35)" }} />
               <RainbowKitCustomConnectButton />
             </div>
           </div>

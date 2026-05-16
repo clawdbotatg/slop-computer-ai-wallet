@@ -6,6 +6,8 @@ import AssetChip from "./AssetChip";
 import ChatMessageRenderer from "./ChatMessageRenderer";
 import NetworkChip from "./NetworkChip";
 import { useChainId, useSendTransaction, useSwitchChain, useWaitForTransactionReceipt, useWalletClient } from "wagmi";
+import { useEmbeddedContext } from "~~/hooks/useEmbeddedContext";
+import { postProposeTx } from "~~/utils/slopBridge";
 
 interface SimulationChange {
   direction: "in" | "out";
@@ -75,7 +77,11 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
   const [isExecuting, setIsExecuting] = useState(false);
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(tx.txHash);
   const [execError, setExecError] = useState("");
+  // Embedded mode: instead of firing via wagmi, postMessage the tx up to
+  // slop-computer-live so it lands in the multisig pending queue.
+  const [proposedToMultisig, setProposedToMultisig] = useState(false);
 
+  const embedded = useEmbeddedContext();
   const { sendTransactionAsync } = useSendTransaction();
   const { switchChainAsync } = useSwitchChain();
   const { data: walletClient } = useWalletClient();
@@ -132,6 +138,34 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
   const handleExecute = async () => {
     setIsExecuting(true);
     setExecError("");
+
+    // Embedded mode → bridge to the multisig via postMessage instead of
+    // firing through the user's EOA wallet.
+    if (embedded.embedded) {
+      try {
+        const ok = postProposeTx({
+          chainId: tx.chainId,
+          target: tx.to,
+          value: tx.value || "0",
+          data: tx.data && tx.data.startsWith("0x") ? tx.data : "0x",
+          summary: tx.description,
+        });
+        if (!ok) {
+          setExecError(
+            "Couldn't reach the slop-computer wallet (not embedded?). Open this app inside live.slop.computer.",
+          );
+          setIsExecuting(false);
+          return;
+        }
+        setProposedToMultisig(true);
+        setShowModal(false);
+      } catch (e: unknown) {
+        setExecError(e instanceof Error ? e.message : "Failed to queue tx to multisig");
+      } finally {
+        setIsExecuting(false);
+      }
+      return;
+    }
 
     try {
       if (tx.chainId && currentChainId !== tx.chainId) {
@@ -230,10 +264,26 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
           </div>
         )}
 
+        {/* Embedded mode: tx queued to the multisig pending list */}
+        {proposedToMultisig && (
+          <div
+            className="text-sm flex items-center gap-2 px-3 py-2"
+            style={{
+              color: "var(--slop-lime, #bcff5b)",
+              border: "1px solid rgba(188, 255, 91, 0.3)",
+              backgroundColor: "rgba(188, 255, 91, 0.08)",
+            }}
+          >
+            ✓ Sent to multisig — sign in the wallet app
+          </div>
+        )}
+
         {/* Execute button */}
-        {!txHash && (
+        {!txHash && !proposedToMultisig && (
           <button className="btn btn-sm w-full gold-btn" style={{}} onClick={() => setShowModal(true)}>
-            <span className="font-[family-name:var(--font-cinzel)] text-xs tracking-[0.1em] uppercase">Execute</span>
+            <span className="font-[family-name:var(--font-silkscreen)] text-xs tracking-[0.1em] uppercase">
+              {embedded.embedded ? "Send to multisig" : "Execute"}
+            </span>
           </button>
         )}
       </div>

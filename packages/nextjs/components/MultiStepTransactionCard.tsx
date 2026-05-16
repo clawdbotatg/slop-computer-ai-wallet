@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import ChatMessageRenderer from "./ChatMessageRenderer";
 import { useChainId, useSendTransaction, useSwitchChain, useWaitForTransactionReceipt, useWalletClient } from "wagmi";
+import { useEmbeddedContext } from "~~/hooks/useEmbeddedContext";
+import { postProposeTx } from "~~/utils/slopBridge";
 
 interface StepData {
   to: string;
@@ -169,6 +171,9 @@ const MultiStepTransactionCard = ({ tx, onComplete, onConfirmed }: MultiStepTran
     setCommitTimestamp(undefined);
   }, [storageKey]);
 
+  const embedded = useEmbeddedContext();
+  const [proposedStep1, setProposedStep1] = useState(false);
+  const [proposedStep2, setProposedStep2] = useState(false);
   const { sendTransactionAsync } = useSendTransaction();
   const { switchChainAsync } = useSwitchChain();
   const { data: walletClient } = useWalletClient();
@@ -293,6 +298,41 @@ const MultiStepTransactionCard = ({ tx, onComplete, onConfirmed }: MultiStepTran
   const handleExecuteStep = async (step: StepData, stepNum: 1 | 2) => {
     setExecError("");
     setState(stepNum === 1 ? "step1_confirming" : "step2_confirming");
+
+    // Embedded mode → bridge each step to the multisig via postMessage.
+    // Multi-step flows (approve + swap, etc.) all need separate signer
+    // approvals on the multisig side; we queue them as independent txs.
+    if (embedded.embedded) {
+      try {
+        const ok = postProposeTx({
+          chainId: step.chainId,
+          target: step.to,
+          value: step.value || "0",
+          data: step.data && step.data.startsWith("0x") ? step.data : "0x",
+          summary: step.label || `step ${stepNum} of multi-step tx`,
+        });
+        if (!ok) {
+          setExecError(
+            "Couldn't reach the slop-computer wallet (not embedded?). Open this app inside live.slop.computer.",
+          );
+          setState(stepNum === 1 ? "idle" : "step2_confirming");
+          return;
+        }
+        if (stepNum === 1) {
+          setProposedStep1(true);
+          setShowModal(false);
+        } else {
+          setProposedStep2(true);
+        }
+        // Don't advance state machine — the slop-computer multisig pending
+        // queue takes over from here. The next step is up to the user to
+        // queue once the first is executed.
+      } catch (e: unknown) {
+        setExecError(e instanceof Error ? e.message : "Failed to queue tx to multisig");
+        setState(stepNum === 1 ? "idle" : "step2_confirming");
+      }
+      return;
+    }
 
     try {
       if (step.chainId && currentChainId !== step.chainId) {
@@ -531,19 +571,33 @@ const MultiStepTransactionCard = ({ tx, onComplete, onConfirmed }: MultiStepTran
           </div>
         )}
 
+        {/* Embedded mode: step queued to the multisig */}
+        {(proposedStep1 || proposedStep2) && (
+          <div
+            className="text-sm flex items-center gap-2 px-3 py-2"
+            style={{
+              color: "var(--slop-lime, #bcff5b)",
+              border: "1px solid rgba(188, 255, 91, 0.3)",
+              backgroundColor: "rgba(188, 255, 91, 0.08)",
+            }}
+          >
+            ✓ {proposedStep2 ? "Step 2" : "Step 1"} sent to multisig — sign in the wallet app
+          </div>
+        )}
+
         {/* Action buttons */}
-        {state === "idle" && needsSwitch && (
+        {state === "idle" && needsSwitch && !embedded.embedded && (
           <button className="btn btn-sm w-full gold-btn" style={{}} onClick={() => handleSwitchChain(step1.chainId)}>
-            <span className="font-[family-name:var(--font-cinzel)] text-xs tracking-[0.1em] uppercase">
+            <span className="font-[family-name:var(--font-silkscreen)] text-xs tracking-[0.1em] uppercase">
               Switch to {chainName || `Chain ${step1.chainId}`}
             </span>
           </button>
         )}
 
-        {state === "idle" && !needsSwitch && (
+        {state === "idle" && (!needsSwitch || embedded.embedded) && !proposedStep1 && (
           <button className="btn btn-sm w-full gold-btn" style={{}} onClick={() => setShowModal(true)}>
-            <span className="font-[family-name:var(--font-cinzel)] text-xs tracking-[0.1em] uppercase">
-              {step1?.label || "Execute Step 1"}
+            <span className="font-[family-name:var(--font-silkscreen)] text-xs tracking-[0.1em] uppercase">
+              {embedded.embedded ? `Send to multisig: ${step1?.label || "Step 1"}` : step1?.label || "Execute Step 1"}
             </span>
           </button>
         )}
