@@ -18,14 +18,14 @@ interface ActivityItem {
 }
 
 const TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  send: { label: "Sent", color: "#8A8578" },
-  receive: { label: "Received", color: "#C9A84C" },
-  trade: { label: "Swapped", color: "#8A8578" },
-  bridge: { label: "Bridged", color: "#8A8578" },
-  approve: { label: "Approved", color: "#8A8578" },
-  deposit: { label: "Deposited", color: "#8A8578" },
+  send: { label: "Sent", color: "#7878a0" },
+  receive: { label: "Received", color: "#ff3ec9" },
+  trade: { label: "Swapped", color: "#7878a0" },
+  bridge: { label: "Bridged", color: "#7878a0" },
+  approve: { label: "Approved", color: "#7878a0" },
+  deposit: { label: "Deposited", color: "#7878a0" },
   withdraw: { label: "Withdrew", color: "#9B3D3D" },
-  mint: { label: "Minted", color: "#C9A84C" },
+  mint: { label: "Minted", color: "#ff3ec9" },
 };
 
 function relativeTime(dateStr: string): string {
@@ -61,7 +61,7 @@ function TransferChips({ item }: { item: ActivityItem }) {
     return (
       <span className="inline-flex items-center gap-1 flex-wrap">
         <AssetChip symbol={outT.symbol} amount={outT.amount} thumbnail={outT.icon} chain={chain} />
-        <span style={{ color: "#8A8578" }} className="text-xs">
+        <span style={{ color: "#7878a0" }} className="text-xs">
           →
         </span>
         <AssetChip symbol={inT.symbol} amount={inT.amount} thumbnail={inT.icon} chain={chain} />
@@ -154,16 +154,16 @@ export default function ActivityPanel({
   }, [address, initialItems]);
 
   return (
-    <div className="p-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(201, 168, 76, 0.15)" }}>
+    <div className="p-4" style={{ backgroundColor: "#111111", border: "1px solid rgba(255, 62, 201, 0.15)" }}>
       <div className="flex justify-between items-center mb-4">
         <span
           className="font-[family-name:var(--font-cinzel)] text-xs tracking-[0.15em] uppercase"
-          style={{ color: "#C9A84C" }}
+          style={{ color: "#ff3ec9" }}
         >
           Activity
         </span>
         {isLoading && items.length > 0 && (
-          <span className="loading loading-spinner loading-xs" style={{ color: "#C9A84C" }}></span>
+          <span className="loading loading-spinner loading-xs" style={{ color: "#ff3ec9" }}></span>
         )}
       </div>
 
@@ -185,14 +185,14 @@ export default function ActivityPanel({
 
       {/* Error */}
       {error && !isLoading && (
-        <div className="text-center py-8 text-sm" style={{ color: "#8A8578" }}>
+        <div className="text-center py-8 text-sm" style={{ color: "#7878a0" }}>
           {error}
         </div>
       )}
 
       {/* Empty */}
       {!isLoading && !error && items.length === 0 && (
-        <div className="text-center py-8 text-sm" style={{ color: "#8A8578" }}>
+        <div className="text-center py-8 text-sm" style={{ color: "#7878a0" }}>
           No activity yet
         </div>
       )}
@@ -205,15 +205,15 @@ export default function ActivityPanel({
           const alreadyReal = items.some(i => i.hash.toLowerCase() === pending.txHash.toLowerCase());
           if (alreadyReal) return null;
           const typeInfo = TYPE_LABELS[pending.type] ||
-            TYPE_LABELS["trade"] || { label: pending.type, color: "#8A8578" };
+            TYPE_LABELS["trade"] || { label: pending.type, color: "#7878a0" };
           return (
             <div
               key={`pending-${pending.id}`}
               className="flex items-center gap-2 py-3 px-2 -mx-2"
               style={{
-                borderBottom: "1px solid rgba(201, 168, 76, 0.06)",
-                backgroundColor: "rgba(201, 168, 76, 0.08)",
-                borderLeft: "2px solid rgba(201, 168, 76, 0.4)",
+                borderBottom: "1px solid rgba(255, 62, 201, 0.06)",
+                backgroundColor: "rgba(255, 62, 201, 0.08)",
+                borderLeft: "2px solid rgba(255, 62, 201, 0.4)",
               }}
             >
               <span
@@ -226,7 +226,7 @@ export default function ActivityPanel({
                 {pending.outToken && pending.inToken ? (
                   <span className="inline-flex items-center gap-1 flex-wrap">
                     <AssetChip symbol={pending.outToken.symbol} amount={pending.outToken.amount} />
-                    <span style={{ color: "#8A8578" }} className="text-xs">
+                    <span style={{ color: "#7878a0" }} className="text-xs">
                       →
                     </span>
                     <AssetChip symbol={pending.inToken.symbol} amount={pending.inToken.amount} />
@@ -238,10 +238,10 @@ export default function ActivityPanel({
                 ) : null}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
-                <span className="loading loading-spinner loading-xs" style={{ color: "#C9A84C" }} />
+                <span className="loading loading-spinner loading-xs" style={{ color: "#ff3ec9" }} />
                 <span
                   className="text-[10px] font-[family-name:var(--font-cinzel)]"
-                  style={{ color: "#C9A84C", opacity: 0.8 }}
+                  style={{ color: "#ff3ec9", opacity: 0.8 }}
                 >
                   Pending
                 </span>
@@ -254,7 +254,7 @@ export default function ActivityPanel({
       {items.length > 0 && (
         <div className="space-y-0">
           {items.map(item => {
-            const typeInfo = TYPE_LABELS[item.type] || { label: item.type, color: "#8A8578" };
+            const typeInfo = TYPE_LABELS[item.type] || { label: item.type, color: "#7878a0" };
             const isFailed = item.status === "failed";
 
             return (
@@ -262,7 +262,7 @@ export default function ActivityPanel({
                 key={item.id}
                 className={`flex items-center gap-2 py-3 px-2 -mx-2 transition-colors duration-300 hover:bg-white/[0.02] cursor-pointer ${isFailed ? "opacity-50" : ""}`}
                 style={{
-                  borderBottom: "1px solid rgba(201, 168, 76, 0.06)",
+                  borderBottom: "1px solid rgba(255, 62, 201, 0.06)",
                 }}
                 onClick={() =>
                   openModal({
@@ -297,11 +297,11 @@ export default function ActivityPanel({
                 <div className="text-right shrink-0 flex items-center gap-1.5">
                   <div>
                     {item.valueUsd != null && (
-                      <div className="font-[family-name:var(--font-jetbrains)] text-xs" style={{ color: "#E8E4DC" }}>
+                      <div className="font-[family-name:var(--font-jetbrains)] text-xs" style={{ color: "#e8e0ff" }}>
                         {formatUsdValue(item.valueUsd)}
                       </div>
                     )}
-                    <div className="text-[10px]" style={{ color: "#8A8578" }}>
+                    <div className="text-[10px]" style={{ color: "#7878a0" }}>
                       {relativeTime(item.minedAt)}
                     </div>
                   </div>
@@ -310,9 +310,9 @@ export default function ActivityPanel({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="transition-colors"
-                    style={{ color: "#8A8578" }}
-                    onMouseEnter={e => (e.currentTarget.style.color = "#C9A84C")}
-                    onMouseLeave={e => (e.currentTarget.style.color = "#8A8578")}
+                    style={{ color: "#7878a0" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "#ff3ec9")}
+                    onMouseLeave={e => (e.currentTarget.style.color = "#7878a0")}
                     title="View on explorer"
                   >
                     <svg

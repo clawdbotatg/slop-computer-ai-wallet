@@ -6,7 +6,6 @@ import { useAccount } from "wagmi";
 import ActivityPanel from "~~/components/ActivityPanel";
 import ChatMessageRenderer from "~~/components/ChatMessageRenderer";
 import { useDetailModal } from "~~/components/DetailModal";
-import GoldParticles from "~~/components/GoldParticles";
 import MultiStepTransactionCard from "~~/components/MultiStepTransactionCard";
 import TransactionCard from "~~/components/TransactionCard";
 import { RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
@@ -176,23 +175,9 @@ const Home: NextPage = () => {
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [pendingActivities, setPendingActivities] = useState<PendingActivity[]>([]);
   const [highlightedTokens, setHighlightedTokens] = useState<Set<string>>(new Set());
+  const [mobileTab, setMobileTab] = useState<"assets" | "activity">("assets");
 
   const chatScrollRef = useRef<HTMLDivElement>(null);
-
-  // Global gold shimmer: track cursor on root, each .gold-btn reads from its own offset
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      document.querySelectorAll<HTMLElement>(".gold-btn").forEach(btn => {
-        const r = btn.getBoundingClientRect();
-        const x = e.clientX - r.left;
-        const y = e.clientY - r.top;
-        btn.style.setProperty("--mx", `${x}px`);
-        btn.style.setProperty("--my", `${y}px`);
-      });
-    };
-    window.addEventListener("mousemove", handler, { passive: true });
-    return () => window.removeEventListener("mousemove", handler);
-  }, []);
 
   useEffect(() => {
     if (!STORAGE_KEY || messages.length === 0) return;
@@ -332,62 +317,85 @@ const Home: NextPage = () => {
     setPendingActivities(prev => prev.filter(p => p.txHash.toLowerCase() !== txHash.toLowerCase()));
   }, []);
 
-  // ─── handleSubmit ────────────────────────────────────────────────────────
+  // ─── Intent processing ──────────────────────────────────────────────────
+
+  const processIntent = useCallback(
+    async (userText: string, conversation: ChatMessage[]) => {
+      if (!address || !isAuthed) return;
+      setIsProcessing(true);
+      try {
+        const res = await fetch("/api/intent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...(authHeaders ?? {}) },
+          body: JSON.stringify({
+            message: userText,
+            address,
+            portfolio,
+            defiPositions,
+            chainId: embedded.chainId ?? undefined,
+            recentMessages: conversation.slice(-6).map(m => ({ role: m.role, content: m.content })),
+            recentActivity: activity.slice(0, 50),
+          }),
+        });
+        const data = await res.json();
+
+        const assistantMsg: ChatMessage = {
+          role: "assistant",
+          content: data.message || "Something went wrong",
+          transaction: data.type === "transaction" ? data.transaction : undefined,
+          multistepTransaction:
+            data.type === "multistep_transaction"
+              ? {
+                  message: data.message,
+                  steps: data.steps,
+                  delay: data.delay || 65000,
+                  priceEth: data.priceEth,
+                  priceWei: data.priceWei,
+                }
+              : undefined,
+          timestamp: Date.now(),
+        };
+        setMessages(prev => [...prev, assistantMsg]);
+      } catch {
+        setMessages(prev => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Sorry, something went wrong. Please try again.",
+            timestamp: Date.now(),
+          },
+        ]);
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [address, isAuthed, authHeaders, portfolio, defiPositions, embedded.chainId, activity],
+  );
 
   const handleSubmit = async () => {
     if (!message.trim() || !address || !isAuthed) return;
-
     const userMsg: ChatMessage = { role: "user", content: message, timestamp: Date.now() };
-    setMessages(prev => [...prev, userMsg]);
+    const next = [...messages, userMsg];
+    setMessages(next);
     setMessage("");
-    setIsProcessing(true);
-
-    try {
-      const res = await fetch("/api/intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(authHeaders ?? {}) },
-        body: JSON.stringify({
-          message,
-          address,
-          portfolio,
-          defiPositions,
-          chainId: embedded.chainId ?? undefined,
-          recentMessages: messages.slice(-6).map(m => ({ role: m.role, content: m.content })),
-          recentActivity: activity.slice(0, 50),
-        }),
-      });
-      const data = await res.json();
-
-      const assistantMsg: ChatMessage = {
-        role: "assistant",
-        content: data.message || "Something went wrong",
-        transaction: data.type === "transaction" ? data.transaction : undefined,
-        multistepTransaction:
-          data.type === "multistep_transaction"
-            ? {
-                message: data.message,
-                steps: data.steps,
-                delay: data.delay || 65000,
-                priceEth: data.priceEth,
-                priceWei: data.priceWei,
-              }
-            : undefined,
-        timestamp: Date.now(),
-      };
-      setMessages(prev => [...prev, assistantMsg]);
-    } catch {
-      setMessages(prev => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Sorry, something went wrong. Please try again.",
-          timestamp: Date.now(),
-        },
-      ]);
-    } finally {
-      setIsProcessing(false);
-    }
+    await processIntent(message, next);
   };
+
+  // Resume an in-flight request after page reload: if the last persisted
+  // message is the user's (no assistant response yet), re-fire the intent.
+  const resumedRef = useRef(false);
+  useEffect(() => {
+    resumedRef.current = false;
+  }, [address]);
+  useEffect(() => {
+    if (resumedRef.current) return;
+    if (!address || !isAuthed || isProcessing) return;
+    if (messages.length === 0) return;
+    const last = messages[messages.length - 1];
+    if (last.role !== "user") return;
+    resumedRef.current = true;
+    processIntent(last.content, messages);
+  }, [address, isAuthed, messages, isProcessing, processIntent]);
 
   // ─── Computed ────────────────────────────────────────────────────────────
 
@@ -430,64 +438,88 @@ const Home: NextPage = () => {
           </div>
         ) : (
           <div className="mt-2">
-            <GoldParticles foreground={false} />
-            <div className="flex flex-col lg:flex-row gap-4" style={{ height: "calc(100vh - 80px)" }}>
-              {/* LEFT SIDEBAR: Portfolio */}
-              <div className="w-full lg:w-72 shrink-0 space-y-4 overflow-y-auto">
+            {/* TOP BAR — balance + connect button (replaces the old Header) */}
+            <div
+              className="flex items-center justify-between pb-3 mb-2"
+              style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.18)" }}
+            >
+              <div className="flex items-baseline gap-3">
+                {isLoadingPortfolio ? (
+                  <span className="loading loading-spinner loading-sm" style={{ color: "#ff3ec9" }}></span>
+                ) : (
+                  <>
+                    <span
+                      className="font-[family-name:var(--font-silkscreen)] text-2xl sm:text-3xl tracking-[0.08em]"
+                      style={{ color: "var(--slop-magenta, #ff3ec9)" }}
+                    >
+                      {formatUsdValue(grandTotal)}
+                    </span>
+                    {changeUsd !== 0 && (
+                      <span
+                        className="font-[family-name:var(--font-jetbrains)] text-base"
+                        style={{ color: isChangeNegative ? "#9B3D3D" : "#bcff5b" }}
+                      >
+                        {isChangeNegative ? "" : "+"}
+                        {changePct.toFixed(1)}%
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+              <div className="flex items-center gap-2">{!embedded.embedded && <RainbowKitCustomConnectButton />}</div>
+            </div>
+
+            {/* Tab switcher — only visible below md */}
+            <div className="flex md:hidden mb-2" style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.18)" }}>
+              {(["assets", "activity"] as const).map(tab => {
+                const active = mobileTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setMobileTab(tab)}
+                    className="flex-1 px-4 py-2 text-xs font-[family-name:var(--font-silkscreen)] tracking-[0.15em] uppercase cursor-pointer transition-colors"
+                    style={{
+                      color: active ? "#ff3ec9" : "#7878a0",
+                      borderBottom: active ? "2px solid #ff3ec9" : "2px solid transparent",
+                      marginBottom: "-1px",
+                      backgroundColor: "transparent",
+                    }}
+                  >
+                    {tab}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-row gap-4 h-[calc(100vh-244px)] md:h-[calc(100vh-200px)]">
+              {/* LEFT: Your Assets */}
+              <div
+                className={`${mobileTab === "assets" ? "" : "hidden"} md:block flex-1 min-w-0 space-y-4 overflow-y-auto`}
+              >
                 <div
                   className="p-4 space-y-4"
                   style={{
                     backgroundColor: "#111111",
-                    border: "1px solid rgba(201, 168, 76, 0.15)",
+                    border: "1px solid rgba(255, 62, 201, 0.15)",
                   }}
                 >
-                  {/* Total + daily change header */}
-                  <div>
-                    {isLoadingPortfolio ? (
-                      <div className="flex items-center gap-2">
-                        <span className="loading loading-spinner loading-sm" style={{ color: "#C9A84C" }}></span>
-                        <span className="text-sm" style={{ color: "#8A8578" }}>
-                          Loading...
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className="font-[family-name:var(--font-jetbrains)] text-2xl font-light"
-                          style={{ color: "#E8E4DC" }}
-                        >
-                          {formatUsdValue(grandTotal)}
-                        </span>
-                        {changeUsd !== 0 && (
-                          <span
-                            className="font-[family-name:var(--font-jetbrains)] text-sm"
-                            style={{ color: isChangeNegative ? "#9B3D3D" : "#C9A84C" }}
-                          >
-                            {isChangeNegative ? "" : "+"}
-                            {changePct.toFixed(1)}%
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
                   {/* WALLET section */}
                   <div>
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-xs tracking-[0.2em] uppercase" style={{ color: "#8A8578" }}>
+                      <span className="text-xs tracking-[0.2em] uppercase" style={{ color: "#7878a0" }}>
                         Wallet
                       </span>
-                      <span className="font-[family-name:var(--font-jetbrains)] text-sm" style={{ color: "#8A8578" }}>
+                      <span className="font-[family-name:var(--font-jetbrains)] text-sm" style={{ color: "#7878a0" }}>
                         {formatUsdValue(walletTotal)}
                       </span>
                     </div>
 
                     {isLoadingPortfolio ? (
-                      <div className="text-center py-4" style={{ color: "#8A8578" }}>
+                      <div className="text-center py-4" style={{ color: "#7878a0" }}>
                         Loading assets...
                       </div>
                     ) : portfolio.length === 0 ? (
-                      <div className="text-center py-4" style={{ color: "#8A8578" }}>
+                      <div className="text-center py-4" style={{ color: "#7878a0" }}>
                         No assets found
                       </div>
                     ) : (
@@ -499,8 +531,8 @@ const Home: NextPage = () => {
                               key={`${asset.blockchain}-${asset.contractAddress || "native"}-${i}`}
                               className="flex items-center justify-between py-2 px-2 -mx-2 transition-colors duration-300 hover:bg-white/[0.02] cursor-pointer"
                               style={{
-                                borderBottom: "1px solid rgba(201, 168, 76, 0.06)",
-                                backgroundColor: isHighlighted ? "rgba(201, 168, 76, 0.06)" : undefined,
+                                borderBottom: "1px solid rgba(255, 62, 201, 0.06)",
+                                backgroundColor: isHighlighted ? "rgba(255, 62, 201, 0.06)" : undefined,
                               }}
                               onClick={() =>
                                 openModal({
@@ -534,8 +566,8 @@ const Home: NextPage = () => {
                                           fallback.className =
                                             "w-7 h-7 flex items-center justify-center text-xs font-bold absolute inset-0";
                                           fallback.style.backgroundColor = "#111111";
-                                          fallback.style.border = "1px solid rgba(201, 168, 76, 0.2)";
-                                          fallback.style.color = "#C9A84C";
+                                          fallback.style.border = "1px solid rgba(255, 62, 201, 0.2)";
+                                          fallback.style.color = "#ff3ec9";
                                           fallback.textContent = asset.tokenSymbol.slice(0, 2);
                                           parent.appendChild(fallback);
                                         }
@@ -546,8 +578,8 @@ const Home: NextPage = () => {
                                       className="w-7 h-7 flex items-center justify-center text-xs font-[family-name:var(--font-cinzel)] font-semibold"
                                       style={{
                                         backgroundColor: "#111111",
-                                        border: "1px solid rgba(201, 168, 76, 0.2)",
-                                        color: "#C9A84C",
+                                        border: "1px solid rgba(255, 62, 201, 0.2)",
+                                        color: "#ff3ec9",
                                       }}
                                     >
                                       {asset.tokenSymbol.slice(0, 1)}
@@ -563,7 +595,7 @@ const Home: NextPage = () => {
                                   )}
                                 </div>
                                 <div>
-                                  <div className="text-sm" style={{ color: "#E8E4DC" }}>
+                                  <div className="text-sm" style={{ color: "#e8e0ff" }}>
                                     {asset.tokenSymbol}
                                   </div>
                                 </div>
@@ -572,12 +604,12 @@ const Home: NextPage = () => {
                                 {isHighlighted && (
                                   <span
                                     className="loading loading-dots loading-xs"
-                                    style={{ color: "#C9A84C", width: "12px" }}
+                                    style={{ color: "#ff3ec9", width: "12px" }}
                                   />
                                 )}
                                 <div
                                   className="font-[family-name:var(--font-jetbrains)] text-sm"
-                                  style={{ color: "#E8E4DC" }}
+                                  style={{ color: "#e8e0ff" }}
                                 >
                                   {formatUsdValue(asset.balanceUsd)}
                                 </div>
@@ -589,9 +621,9 @@ const Home: NextPage = () => {
                         {!showAllAssets && hiddenCount > 0 && (
                           <button
                             className="w-full text-center text-sm py-2 transition-colors cursor-pointer"
-                            style={{ color: "#C9A84C" }}
+                            style={{ color: "#ff3ec9" }}
                             onMouseEnter={e => (e.currentTarget.style.color = "#B8963E")}
-                            onMouseLeave={e => (e.currentTarget.style.color = "#C9A84C")}
+                            onMouseLeave={e => (e.currentTarget.style.color = "#ff3ec9")}
                             onClick={() => setShowAllAssets(true)}
                           >
                             and {hiddenCount} more...
@@ -600,9 +632,9 @@ const Home: NextPage = () => {
                         {showAllAssets && hiddenCount > 0 && (
                           <button
                             className="w-full text-center text-sm py-2 transition-colors cursor-pointer"
-                            style={{ color: "#C9A84C" }}
+                            style={{ color: "#ff3ec9" }}
                             onMouseEnter={e => (e.currentTarget.style.color = "#B8963E")}
-                            onMouseLeave={e => (e.currentTarget.style.color = "#C9A84C")}
+                            onMouseLeave={e => (e.currentTarget.style.color = "#ff3ec9")}
                             onClick={() => setShowAllAssets(false)}
                           >
                             Show less
@@ -615,15 +647,15 @@ const Home: NextPage = () => {
                   {/* PORTFOLIO (DeFi) section */}
                   {defiPositions.length > 0 && (
                     <>
-                      <div className="h-px" style={{ backgroundColor: "rgba(201, 168, 76, 0.15)" }} />
+                      <div className="h-px" style={{ backgroundColor: "rgba(255, 62, 201, 0.15)" }} />
                       <div>
                         <div className="flex justify-between items-center mb-3">
-                          <span className="text-xs tracking-[0.2em] uppercase" style={{ color: "#8A8578" }}>
+                          <span className="text-xs tracking-[0.2em] uppercase" style={{ color: "#7878a0" }}>
                             Portfolio
                           </span>
                           <span
                             className="font-[family-name:var(--font-jetbrains)] text-sm"
-                            style={{ color: "#8A8578" }}
+                            style={{ color: "#7878a0" }}
                           >
                             {formatUsdValue(defiTotal)}
                           </span>
@@ -634,7 +666,7 @@ const Home: NextPage = () => {
                               key={`defi-${pos.blockchain}-${pos.contractAddress || pos.tokenSymbol}-${i}`}
                               className="flex items-center justify-between py-1.5 px-2 -mx-2 transition-colors duration-300 hover:bg-white/[0.02] cursor-pointer"
                               style={{
-                                borderBottom: "1px solid rgba(201, 168, 76, 0.06)",
+                                borderBottom: "1px solid rgba(255, 62, 201, 0.06)",
                               }}
                               onClick={() =>
                                 openModal({
@@ -668,8 +700,8 @@ const Home: NextPage = () => {
                                       className="w-7 h-7 flex items-center justify-center text-xs font-[family-name:var(--font-cinzel)] font-semibold"
                                       style={{
                                         backgroundColor: "#111111",
-                                        border: "1px solid rgba(201, 168, 76, 0.2)",
-                                        color: "#C9A84C",
+                                        border: "1px solid rgba(255, 62, 201, 0.2)",
+                                        color: "#ff3ec9",
                                       }}
                                     >
                                       {pos.tokenSymbol.slice(0, 1)}
@@ -685,10 +717,10 @@ const Home: NextPage = () => {
                                   )}
                                 </div>
                                 <div>
-                                  <div className="text-xs" style={{ color: "#E8E4DC" }}>
+                                  <div className="text-xs" style={{ color: "#e8e0ff" }}>
                                     {pos.tokenSymbol}
                                   </div>
-                                  <div className="text-[10px] capitalize" style={{ color: "#8A8578" }}>
+                                  <div className="text-[10px] capitalize" style={{ color: "#7878a0" }}>
                                     {pos.positionType}
                                     {pos.protocol ? ` · ${pos.protocol}` : ""}
                                   </div>
@@ -697,7 +729,7 @@ const Home: NextPage = () => {
                               <div className="text-right">
                                 <div
                                   className="font-[family-name:var(--font-jetbrains)] text-xs"
-                                  style={{ color: "#E8E4DC" }}
+                                  style={{ color: "#e8e0ff" }}
                                 >
                                   {formatUsdValue(pos.balanceUsd)}
                                 </div>
@@ -711,201 +743,174 @@ const Home: NextPage = () => {
                 </div>
               </div>
 
-              {/* CENTER: Chat */}
-              <div className="flex-1 min-w-0 flex flex-col">
-                {/* Chat header with clear button */}
-                {messages.length > 0 && (
-                  <div className="flex justify-end pb-2">
-                    <button
-                      className="btn btn-ghost btn-xs transition-colors cursor-pointer"
-                      style={{ color: "#8A8578" }}
-                      onMouseEnter={e => (e.currentTarget.style.color = "#9B3D3D")}
-                      onMouseLeave={e => (e.currentTarget.style.color = "#8A8578")}
-                      onClick={() => {
-                        setMessages([]);
-                        if (STORAGE_KEY) localStorage.removeItem(STORAGE_KEY);
-                      }}
-                    >
-                      Clear chat
-                    </button>
-                  </div>
-                )}
-                {/* Chat messages — scrollable */}
-                <div className="flex-1 overflow-y-auto space-y-2 pb-4" ref={chatScrollRef}>
-                  {messages.length === 0 && (
-                    <div className="text-center mt-20 flex flex-col items-center gap-6">
-                      <p
-                        className="font-[family-name:var(--font-cinzel)] text-xl tracking-[0.2em]"
-                        style={{ color: "#8A8578" }}
-                      >
-                        Speak your desires
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-3 gap-y-4 w-full max-w-2xl">
-                        {[
-                          {
-                            category: "Portfolio",
-                            suggestions: ["how is ETH doing?", "show my recent trades"],
-                          },
-                          {
-                            category: "Swap & Bridge",
-                            suggestions: ["bridge 100 USDC to Base", "swap 0.1 ETH for USDC"],
-                          },
-                          {
-                            category: "DeFi",
-                            suggestions: ["deposit 100 USDC into Aave", "unwrap my WETH"],
-                          },
-                          {
-                            category: "History",
-                            suggestions: ["where did my ETH come from?", "what did I spend gas on?"],
-                          },
-                        ].map(group => (
-                          <div key={group.category} className="flex flex-col gap-1.5">
-                            <span
-                              className="font-[family-name:var(--font-cinzel)] uppercase text-[10px] tracking-[0.2em] mb-1 text-left"
-                              style={{ color: "#8A8578" }}
-                            >
-                              {group.category}
-                            </span>
-                            {group.suggestions.map(suggestion => (
-                              <button
-                                key={suggestion}
-                                className="text-sm px-4 py-2.5 text-left transition-colors cursor-pointer"
-                                style={{
-                                  border: "1px solid rgba(201, 168, 76, 0.2)",
-                                  color: "#8A8578",
-                                  backgroundColor: "transparent",
-                                  fontFamily: "var(--font-jetbrains)",
-                                }}
-                                onMouseEnter={e => {
-                                  e.currentTarget.style.borderColor = "rgba(201, 168, 76, 0.5)";
-                                  e.currentTarget.style.color = "#C9A84C";
-                                }}
-                                onMouseLeave={e => {
-                                  e.currentTarget.style.borderColor = "rgba(201, 168, 76, 0.2)";
-                                  e.currentTarget.style.color = "#8A8578";
-                                }}
-                                onClick={() => setMessage(suggestion)}
-                              >
-                                {suggestion}
-                              </button>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {messages.map((msg, i) => (
-                    <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className="max-w-[85%] px-3 py-1.5"
-                        style={
-                          msg.role === "user"
-                            ? {
-                                backgroundColor: "rgba(201, 168, 76, 0.15)",
-                                border: "1px solid rgba(201, 168, 76, 0.2)",
-                                color: "#E8E4DC",
-                              }
-                            : {
-                                backgroundColor: "#111111",
-                                border: "1px solid rgba(201, 168, 76, 0.08)",
-                                color: "#E8E4DC",
-                              }
-                        }
-                      >
-                        {msg.role === "assistant" ? (
-                          <ChatMessageRenderer content={msg.content} portfolio={portfolio} />
-                        ) : (
-                          <p className="text-sm whitespace-pre-wrap leading-snug m-0">{msg.content}</p>
-                        )}
-
-                        {msg.multistepTransaction && (
-                          <MultiStepTransactionCard
-                            tx={msg.multistepTransaction}
-                            address={address!}
-                            onConfirmed={handleTxConfirmed}
-                          />
-                        )}
-
-                        {msg.transaction && !msg.multistepTransaction && (
-                          <TransactionCard
-                            tx={msg.transaction}
-                            address={address!}
-                            onConfirmed={handleTxConfirmed}
-                            onTxHash={(hash: `0x${string}`) => {
-                              setMessages(prev =>
-                                prev.map((m, idx) =>
-                                  idx === i && m.transaction
-                                    ? { ...m, transaction: { ...m.transaction, txHash: hash } }
-                                    : m,
-                                ),
-                              );
-                            }}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {isProcessing && (
-                    <div className="flex justify-start">
-                      <div
-                        className="px-3 py-1.5"
-                        style={{
-                          backgroundColor: "#111111",
-                          border: "1px solid rgba(201, 168, 76, 0.08)",
-                        }}
-                      >
-                        <span className="loading loading-dots loading-sm" style={{ color: "#C9A84C" }}></span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Input — sticky bottom */}
-                <div className="sticky bottom-0 pb-4 pt-2" style={{ backgroundColor: "#0a0a0a" }}>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder={
-                        mounted && !isAuthed
-                          ? "Connect your wallet to continue"
-                          : "Ask your wallet to do something — send, swap, bridge, check balances…"
-                      }
-                      className="flex-1 text-base px-4 py-2"
-                      style={{
-                        backgroundColor: "#111111",
-                        border: "1px solid rgba(201, 168, 76, 0.15)",
-                        color: "#E8E4DC",
-                        outline: "none",
-                        opacity: mounted && !isAuthed ? 0.5 : 1,
-                      }}
-                      value={message}
-                      onChange={e => setMessage(e.target.value)}
-                      onKeyDown={e => e.key === "Enter" && !isProcessing && (!mounted || isAuthed) && handleSubmit()}
-                      disabled={isProcessing || (mounted && !isAuthed)}
-                    />
-                    <button
-                      className="px-6 py-2 relative overflow-hidden gold-btn cursor-pointer"
-                      onClick={handleSubmit}
-                      disabled={isProcessing || !message.trim()}
-                    >
-                      {isProcessing ? (
-                        <span className="loading loading-spinner loading-sm"></span>
-                      ) : (
-                        <span className="font-[family-name:var(--font-cinzel)] text-sm relative z-10">→</span>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* RIGHT SIDEBAR: Activity */}
-              <div className="w-full lg:w-80 shrink-0 overflow-y-auto">
+              {/* RIGHT: Your Activity */}
+              <div className={`${mobileTab === "activity" ? "" : "hidden"} md:block flex-1 min-w-0 overflow-y-auto`}>
                 <ActivityPanel
                   address={address!}
                   initialItems={activity}
                   pendingActivities={pendingActivities}
                   onPendingMatched={handlePendingMatched}
                 />
+              </div>
+            </div>
+
+            {/* CHAT BACKDROP — dark grey at the bottom 1/8, fades up to transparent */}
+            {(messages.length > 0 || isProcessing) && (
+              <div
+                className="fixed inset-x-0 z-30 pointer-events-none"
+                style={{
+                  bottom: "64px",
+                  height: "28vh",
+                  background:
+                    "linear-gradient(to top, rgba(15, 15, 22, 0.9) 0%, rgba(15, 15, 22, 0.85) 60%, transparent 100%)",
+                }}
+              />
+            )}
+
+            {/* CHAT OVERLAY — content-driven height, transparent, fades older messages */}
+            {(messages.length > 0 || isProcessing) && (
+              <div className="slop-chat-overlay fixed inset-x-0 z-40 pointer-events-none" style={{ bottom: "64px" }}>
+                <div className="max-w-7xl mx-auto px-5">
+                  <div
+                    ref={chatScrollRef}
+                    className="slop-chat-fade pointer-events-auto overflow-y-auto space-y-2 pb-2"
+                    style={{ maxHeight: "50vh", paddingTop: "10vh" }}
+                  >
+                    {messages.map((msg, i) => (
+                      <div key={i} className={`group flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                        <div
+                          className="relative max-w-[85%] px-3 py-1.5"
+                          style={
+                            msg.role === "user"
+                              ? {
+                                  backgroundColor: "rgba(255, 62, 201, 0.18)",
+                                  border: "1px solid rgba(255, 62, 201, 0.25)",
+                                  color: "#e8e0ff",
+                                  backdropFilter: "blur(6px)",
+                                }
+                              : {
+                                  backgroundColor: "rgba(17, 17, 17, 0.92)",
+                                  border: "1px solid rgba(255, 62, 201, 0.15)",
+                                  color: "#e8e0ff",
+                                  backdropFilter: "blur(6px)",
+                                }
+                          }
+                        >
+                          <button
+                            className="absolute -top-2 -right-2 w-5 h-5 flex items-center justify-center text-xs leading-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                            style={{
+                              backgroundColor: "#06030d",
+                              border: "1px solid rgba(255, 62, 201, 0.4)",
+                              color: "#7878a0",
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.color = "#ff3ec9")}
+                            onMouseLeave={e => (e.currentTarget.style.color = "#7878a0")}
+                            onClick={() =>
+                              setMessages(prev => {
+                                const next = prev.filter((_, idx) => idx !== i);
+                                if (STORAGE_KEY) {
+                                  if (next.length === 0) localStorage.removeItem(STORAGE_KEY);
+                                  else localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+                                }
+                                return next;
+                              })
+                            }
+                            aria-label="Dismiss message"
+                          >
+                            ×
+                          </button>
+                          {msg.role === "assistant" ? (
+                            <ChatMessageRenderer content={msg.content} portfolio={portfolio} />
+                          ) : (
+                            <p className="text-sm whitespace-pre-wrap leading-snug m-0">{msg.content}</p>
+                          )}
+
+                          {msg.multistepTransaction && (
+                            <MultiStepTransactionCard
+                              tx={msg.multistepTransaction}
+                              address={address!}
+                              onConfirmed={handleTxConfirmed}
+                            />
+                          )}
+
+                          {msg.transaction && !msg.multistepTransaction && (
+                            <TransactionCard
+                              tx={msg.transaction}
+                              address={address!}
+                              onConfirmed={handleTxConfirmed}
+                              onTxHash={(hash: `0x${string}`) => {
+                                setMessages(prev =>
+                                  prev.map((m, idx) =>
+                                    idx === i && m.transaction
+                                      ? { ...m, transaction: { ...m.transaction, txHash: hash } }
+                                      : m,
+                                  ),
+                                );
+                              }}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {isProcessing && (
+                      <div className="flex justify-start">
+                        <div
+                          className="px-3 py-1.5"
+                          style={{
+                            backgroundColor: "rgba(17, 17, 17, 0.92)",
+                            border: "1px solid rgba(255, 62, 201, 0.15)",
+                            backdropFilter: "blur(6px)",
+                          }}
+                        >
+                          <span className="loading loading-dots loading-sm" style={{ color: "#ff3ec9" }}></span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* FIXED FOOTER: chat input */}
+            <div
+              className="fixed inset-x-0 bottom-0 z-50"
+              style={{
+                backgroundColor: "#06030d",
+                borderTop: "1px solid rgba(255, 62, 201, 0.2)",
+              }}
+            >
+              <div className="max-w-7xl mx-auto px-5 py-3 flex gap-2">
+                <input
+                  type="text"
+                  placeholder={
+                    mounted && !isAuthed
+                      ? "Connect your wallet to continue"
+                      : "Ask your wallet to do something — send, swap, bridge, check balances…"
+                  }
+                  className="flex-1 text-base px-4 py-2"
+                  style={{
+                    backgroundColor: "#111111",
+                    border: "1px solid rgba(255, 62, 201, 0.15)",
+                    color: "#e8e0ff",
+                    outline: "none",
+                    opacity: mounted && !isAuthed ? 0.5 : 1,
+                  }}
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && !isProcessing && (!mounted || isAuthed) && handleSubmit()}
+                  disabled={isProcessing || (mounted && !isAuthed)}
+                />
+                <button
+                  className="px-6 py-2 slop-btn cursor-pointer"
+                  onClick={handleSubmit}
+                  disabled={isProcessing || !message.trim()}
+                >
+                  {isProcessing ? (
+                    <span className="loading loading-spinner loading-sm"></span>
+                  ) : (
+                    <span className="text-sm">→</span>
+                  )}
+                </button>
               </div>
             </div>
           </div>

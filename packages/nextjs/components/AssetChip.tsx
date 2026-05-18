@@ -60,8 +60,8 @@ export default function AssetChip({ symbol, amount, thumbnail, chain }: AssetChi
       onClick={() => openModal({ type: "asset", symbol, amount, chain, thumbnail })}
       style={{
         backgroundColor: "#111111",
-        border: "1px solid rgba(201, 168, 76, 0.2)",
-        color: "#E8E4DC",
+        border: "1px solid rgba(255, 62, 201, 0.2)",
+        color: "#e8e0ff",
       }}
     >
       <span className="relative flex-shrink-0 w-4 h-4">
@@ -79,8 +79,8 @@ export default function AssetChip({ symbol, amount, thumbnail, chain }: AssetChi
             className="w-4 h-4 flex items-center justify-center text-[8px] font-[family-name:var(--font-cinzel)] font-semibold"
             style={{
               backgroundColor: "#111111",
-              border: "1px solid rgba(201, 168, 76, 0.2)",
-              color: "#C9A84C",
+              border: "1px solid rgba(255, 62, 201, 0.2)",
+              color: "#ff3ec9",
             }}
           >
             {symbol.slice(0, 1)}
@@ -97,7 +97,7 @@ export default function AssetChip({ symbol, amount, thumbnail, chain }: AssetChi
           />
         )}
       </span>
-      <span style={{ color: "#C9A84C" }}>
+      <span style={{ color: "#ff3ec9" }}>
         {amount && <span className="font-[family-name:var(--font-jetbrains)] mr-0.5">{amount}</span>}
         {symbol}
       </span>

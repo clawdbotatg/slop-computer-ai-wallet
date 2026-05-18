@@ -30,7 +30,7 @@ export const RainbowKitCustomConnectButton = () => {
               if (!connected) {
                 return (
                   <button
-                    className="gold-btn px-6 py-2 font-[family-name:var(--font-cinzel)] text-xs tracking-[0.15em] uppercase"
+                    className="slop-btn px-6 py-2 font-[family-name:var(--font-cinzel)] text-xs tracking-[0.15em] uppercase"
                     onClick={openConnectModal}
                     type="button"
                   >

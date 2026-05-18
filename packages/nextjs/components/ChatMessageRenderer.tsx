@@ -146,7 +146,7 @@ function parseInline(text: string, thumbnailMap: Record<string, string>): React.
     if (part.startsWith("**") && part.endsWith("**")) {
       const inner = part.slice(2, -2);
       return (
-        <strong key={i} className="font-semibold" style={{ color: "#E8E4DC" }}>
+        <strong key={i} className="font-semibold" style={{ color: "#e8e0ff" }}>
           {renderSegments(parseContent(inner, thumbnailMap), thumbnailMap)}
         </strong>
       );
@@ -156,7 +156,7 @@ function parseInline(text: string, thumbnailMap: Record<string, string>): React.
         <code
           key={i}
           className="font-[family-name:var(--font-jetbrains)] text-xs px-1 rounded"
-          style={{ backgroundColor: "rgba(201,168,76,0.1)", color: "#C9A84C" }}
+          style={{ backgroundColor: "rgba(255,62,201,0.1)", color: "#ff3ec9" }}
         >
           {part.slice(1, -1)}
         </code>
@@ -248,7 +248,7 @@ export default function ChatMessageRenderer({ content, portfolio }: ChatMessageR
   }
 
   return (
-    <div className="text-sm leading-snug m-0 font-[family-name:var(--font-inter)]" style={{ color: "#E8E4DC" }}>
+    <div className="text-sm leading-snug m-0 font-[family-name:var(--font-inter)]" style={{ color: "#e8e0ff" }}>
       {renderBlocks(content, thumbnailMap)}
     </div>
   );

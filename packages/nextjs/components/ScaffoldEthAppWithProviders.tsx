@@ -7,13 +7,11 @@ import { AppProgressBar as ProgressBar } from "next-nprogress-bar";
 import { Toaster } from "react-hot-toast";
 import { WagmiProvider } from "wagmi";
 import { DetailModalProvider } from "~~/components/DetailModal";
-import { Footer } from "~~/components/Footer";
-import { Header } from "~~/components/Header";
 import { BlockieAvatar } from "~~/components/scaffold-eth";
 import { wagmiConfig } from "~~/services/web3/wagmiConfig";
 
 const classicalRainbowTheme = darkTheme({
-  accentColor: "#C9A84C",
+  accentColor: "#ff3ec9",
   accentColorForeground: "#0a0a0a",
   borderRadius: "none",
   fontStack: "system",
@@ -24,9 +22,7 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
     <>
       <DetailModalProvider>
         <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#0a0a0a" }}>
-          <Header />
           <main className="relative flex flex-col flex-1">{children}</main>
-          <Footer />
         </div>
       </DetailModalProvider>
       <Toaster />
@@ -53,7 +49,7 @@ export const ScaffoldEthAppWithProviders = ({ children }: { children: React.Reac
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider avatar={BlockieAvatar} theme={mounted ? classicalRainbowTheme : classicalRainbowTheme}>
-          <ProgressBar height="2px" color="#C9A84C" />
+          <ProgressBar height="2px" color="#ff3ec9" />
           <ScaffoldEthApp>{children}</ScaffoldEthApp>
         </RainbowKitProvider>
       </QueryClientProvider>

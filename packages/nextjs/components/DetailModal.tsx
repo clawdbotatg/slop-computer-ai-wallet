@@ -50,16 +50,16 @@ function ModalHeader({ label, identifier }: { label: string; identifier: string 
   return (
     <div
       className="px-5 py-4 flex items-center justify-between"
-      style={{ borderBottom: "1px solid rgba(201, 168, 76, 0.15)" }}
+      style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.15)" }}
     >
       <div className="flex items-center gap-3 min-w-0">
         <span
           className="font-[family-name:var(--font-cinzel)] text-xs tracking-[0.15em] uppercase shrink-0"
-          style={{ color: "#C9A84C" }}
+          style={{ color: "#ff3ec9" }}
         >
           {label}
         </span>
-        <span className="font-[family-name:var(--font-jetbrains)] text-xs truncate" style={{ color: "#E8E4DC" }}>
+        <span className="font-[family-name:var(--font-jetbrains)] text-xs truncate" style={{ color: "#e8e0ff" }}>
           {identifier}
         </span>
       </div>
@@ -70,23 +70,23 @@ function ModalHeader({ label, identifier }: { label: string; identifier: string 
 // ─── Shared Components ───────────────────────────────────────────────────────
 
 function LoadingSkeleton({ width = "60%" }: { width?: string }) {
-  return <div className="h-3 rounded animate-pulse" style={{ backgroundColor: "rgba(201,168,76,0.1)", width }} />;
+  return <div className="h-3 rounded animate-pulse" style={{ backgroundColor: "rgba(255,62,201,0.1)", width }} />;
 }
 
 function DataRow({ label, value, mono = false }: { label: string; value?: React.ReactNode | null; mono?: boolean }) {
   return (
     <div
       className="flex items-center justify-between py-2"
-      style={{ borderBottom: "1px solid rgba(201, 168, 76, 0.06)" }}
+      style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.06)" }}
     >
-      <span className="text-xs" style={{ color: "#8A8578" }}>
+      <span className="text-xs" style={{ color: "#7878a0" }}>
         {label}
       </span>
       {value != null ? (
         typeof value === "string" ? (
           <span
             className={`text-xs ${mono ? "font-[family-name:var(--font-jetbrains)]" : ""}`}
-            style={{ color: "#E8E4DC" }}
+            style={{ color: "#e8e0ff" }}
           >
             {value}
           </span>
@@ -107,9 +107,9 @@ function ExplorerLink({ url, label = "View on Explorer" }: { url: string; label?
       target="_blank"
       rel="noopener noreferrer"
       className="text-xs underline transition-colors"
-      style={{ color: "#C9A84C" }}
-      onMouseEnter={e => (e.currentTarget.style.color = "#E8E4DC")}
-      onMouseLeave={e => (e.currentTarget.style.color = "#C9A84C")}
+      style={{ color: "#ff3ec9" }}
+      onMouseEnter={e => (e.currentTarget.style.color = "#e8e0ff")}
+      onMouseLeave={e => (e.currentTarget.style.color = "#ff3ec9")}
     >
       {label} ↗
     </a>
@@ -122,7 +122,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       className="text-xs transition-colors ml-2 cursor-pointer"
-      style={{ color: copied ? "#4CAF50" : "#8A8578" }}
+      style={{ color: copied ? "#4CAF50" : "#7878a0" }}
       onClick={() => {
         navigator.clipboard.writeText(text);
         setCopied(true);
@@ -157,7 +157,7 @@ function ContractAddressDisplay({ address, chain }: { address: string; chain?: s
         target="_blank"
         rel="noopener noreferrer"
         className="font-[family-name:var(--font-jetbrains)] text-xs hover:underline"
-        style={{ color: "#C9A84C" }}
+        style={{ color: "#ff3ec9" }}
       >
         {truncated}
       </a>
@@ -223,10 +223,10 @@ function AddressContent({ item }: { item: Extract<ModalItem, { type: "address" }
       <div className="px-5 py-4 space-y-0">
         {/* ENS + Avatar */}
         {(displayEns || ensAvatar) && (
-          <div className="flex items-center gap-3 pb-3" style={{ borderBottom: "1px solid rgba(201, 168, 76, 0.06)" }}>
+          <div className="flex items-center gap-3 pb-3" style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.06)" }}>
             {ensAvatar && <img src={ensAvatar} alt="" className="w-8 h-8 rounded-full" />}
             {displayEns && (
-              <span className="font-[family-name:var(--font-cinzel)] text-sm" style={{ color: "#C9A84C" }}>
+              <span className="font-[family-name:var(--font-cinzel)] text-sm" style={{ color: "#ff3ec9" }}>
                 {displayEns}
               </span>
             )}
@@ -236,13 +236,13 @@ function AddressContent({ item }: { item: Extract<ModalItem, { type: "address" }
         {/* Full address with copy */}
         <div
           className="flex items-center justify-between py-2"
-          style={{ borderBottom: "1px solid rgba(201, 168, 76, 0.06)" }}
+          style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.06)" }}
         >
-          <span className="text-xs" style={{ color: "#8A8578" }}>
+          <span className="text-xs" style={{ color: "#7878a0" }}>
             Address
           </span>
           <span className="flex items-center">
-            <span className="font-[family-name:var(--font-jetbrains)] text-xs" style={{ color: "#E8E4DC" }}>
+            <span className="font-[family-name:var(--font-jetbrains)] text-xs" style={{ color: "#e8e0ff" }}>
               {truncated}
             </span>
             <CopyButton text={item.address} />
@@ -256,14 +256,14 @@ function AddressContent({ item }: { item: Extract<ModalItem, { type: "address" }
         {/* Top tokens */}
         {data && data.topTokens.length > 0 && (
           <div className="pt-3">
-            <span className="text-xs" style={{ color: "#8A8578" }}>
+            <span className="text-xs" style={{ color: "#7878a0" }}>
               Top Tokens
             </span>
             <div className="mt-1 space-y-1">
               {data.topTokens.slice(0, 5).map(t => (
                 <div key={t.symbol} className="flex items-center justify-between py-1">
                   <AssetChip symbol={t.symbol} thumbnail={t.icon} />
-                  <span className="font-[family-name:var(--font-jetbrains)] text-xs" style={{ color: "#8A8578" }}>
+                  <span className="font-[family-name:var(--font-jetbrains)] text-xs" style={{ color: "#7878a0" }}>
                     {formatUsd(parseFloat(t.balanceUsd))}
                   </span>
                 </div>
@@ -319,10 +319,10 @@ function AssetContent({ item }: { item: Extract<ModalItem, { type: "asset" }> })
       <div className="px-5 py-4 space-y-0">
         {/* Token icon + name */}
         {(item.thumbnail || data?.icon) && (
-          <div className="flex items-center gap-3 pb-3" style={{ borderBottom: "1px solid rgba(201, 168, 76, 0.06)" }}>
+          <div className="flex items-center gap-3 pb-3" style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.06)" }}>
             <img src={item.thumbnail || data?.icon || ""} alt="" className="w-8 h-8 rounded-full" />
             {data?.name && (
-              <span className="font-[family-name:var(--font-cinzel)] text-sm" style={{ color: "#E8E4DC" }}>
+              <span className="font-[family-name:var(--font-cinzel)] text-sm" style={{ color: "#e8e0ff" }}>
                 {data.name}
               </span>
             )}
@@ -335,20 +335,20 @@ function AssetContent({ item }: { item: Extract<ModalItem, { type: "asset" }> })
         {/* Price with 24h change */}
         <div
           className="flex items-center justify-between py-2"
-          style={{ borderBottom: "1px solid rgba(201, 168, 76, 0.06)" }}
+          style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.06)" }}
         >
-          <span className="text-xs" style={{ color: "#8A8578" }}>
+          <span className="text-xs" style={{ color: "#7878a0" }}>
             Price
           </span>
           {data?.price != null ? (
             <span className="text-xs flex items-center gap-2">
-              <span className="font-[family-name:var(--font-jetbrains)]" style={{ color: "#E8E4DC" }}>
+              <span className="font-[family-name:var(--font-jetbrains)]" style={{ color: "#e8e0ff" }}>
                 {formatUsd(data.price)}
               </span>
               {data.priceChange24h != null && <PriceChange pct={data.priceChange24h} />}
             </span>
           ) : error ? (
-            <span className="text-xs" style={{ color: "#E8E4DC" }}>
+            <span className="text-xs" style={{ color: "#e8e0ff" }}>
               —
             </span>
           ) : (
@@ -362,20 +362,20 @@ function AssetContent({ item }: { item: Extract<ModalItem, { type: "asset" }> })
         {/* Contract addresses per chain from Zerion implementations */}
         {data?.implementations && data.implementations.length > 0 && (
           <div className="pt-2">
-            <span className="text-xs block pb-1" style={{ color: "#8A8578" }}>
+            <span className="text-xs block pb-1" style={{ color: "#7878a0" }}>
               Contracts
             </span>
             {data.implementations.map((impl, i) => (
               <div
                 key={i}
                 className="flex items-center justify-between py-1.5"
-                style={{ borderBottom: "1px solid rgba(201,168,76,0.06)" }}
+                style={{ borderBottom: "1px solid rgba(255,62,201,0.06)" }}
               >
                 <NetworkChip chain={impl.chain} />
                 {impl.address ? (
                   <ContractAddressDisplay address={impl.address} chain={impl.chain} />
                 ) : (
-                  <span className="text-xs" style={{ color: "#8A8578" }}>
+                  <span className="text-xs" style={{ color: "#7878a0" }}>
                     native
                   </span>
                 )}
@@ -391,10 +391,10 @@ function AssetContent({ item }: { item: Extract<ModalItem, { type: "asset" }> })
         {/* Description */}
         {data?.description && (
           <div className="pt-3">
-            <span className="text-xs" style={{ color: "#8A8578" }}>
+            <span className="text-xs" style={{ color: "#7878a0" }}>
               About
             </span>
-            <p className="text-xs mt-1 leading-relaxed" style={{ color: "#E8E4DC" }}>
+            <p className="text-xs mt-1 leading-relaxed" style={{ color: "#e8e0ff" }}>
               {data.description.length > 200 ? `${data.description.slice(0, 200)}…` : data.description}
             </p>
           </div>
@@ -404,7 +404,19 @@ function AssetContent({ item }: { item: Extract<ModalItem, { type: "asset" }> })
         <div className="pt-3 flex gap-3 flex-wrap">
           {data?.links &&
             data.links.length > 0 &&
-            data.links.map((l, i) => <ExplorerLink key={i} url={l.url} label={l.name || l.type} />)}
+            data.links.map((l, i) => {
+              const t = (l.type || "").toLowerCase();
+              const n = (l.name || "").toLowerCase();
+              let label = l.name || l.type || "Link";
+              if (t === "website" || t === "homepage" || n === "website" || n === "homepage") {
+                try {
+                  label = new URL(l.url).hostname.replace(/^www\./, "");
+                } catch {
+                  label = "Website";
+                }
+              }
+              return <ExplorerLink key={i} url={l.url} label={label} />;
+            })}
         </div>
       </div>
     </>
@@ -454,9 +466,9 @@ function NetworkContent({ item }: { item: Extract<ModalItem, { type: "network" }
       <ModalHeader label="Network" identifier={displayName} />
       <div className="px-5 py-4 space-y-0">
         {/* Chain icon + name */}
-        <div className="flex items-center gap-3 pb-3" style={{ borderBottom: "1px solid rgba(201, 168, 76, 0.06)" }}>
+        <div className="flex items-center gap-3 pb-3" style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.06)" }}>
           {icon && <img src={icon} alt="" className="w-8 h-8 rounded-full" />}
-          <span className="font-[family-name:var(--font-cinzel)] text-sm" style={{ color: "#E8E4DC" }}>
+          <span className="font-[family-name:var(--font-cinzel)] text-sm" style={{ color: "#e8e0ff" }}>
             {displayName}
           </span>
         </div>
@@ -515,13 +527,13 @@ function TransactionContent({ item }: { item: Extract<ModalItem, { type: "transa
         {/* Hash with copy */}
         <div
           className="flex items-center justify-between py-2"
-          style={{ borderBottom: "1px solid rgba(201, 168, 76, 0.06)" }}
+          style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.06)" }}
         >
-          <span className="text-xs" style={{ color: "#8A8578" }}>
+          <span className="text-xs" style={{ color: "#7878a0" }}>
             Hash
           </span>
           <span className="flex items-center">
-            <span className="font-[family-name:var(--font-jetbrains)] text-xs" style={{ color: "#E8E4DC" }}>
+            <span className="font-[family-name:var(--font-jetbrains)] text-xs" style={{ color: "#e8e0ff" }}>
               {truncatedHash}
             </span>
             <CopyButton text={item.hash} />
@@ -531,22 +543,22 @@ function TransactionContent({ item }: { item: Extract<ModalItem, { type: "transa
         {/* Status */}
         <div
           className="flex items-center justify-between py-2"
-          style={{ borderBottom: "1px solid rgba(201, 168, 76, 0.06)" }}
+          style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.06)" }}
         >
-          <span className="text-xs" style={{ color: "#8A8578" }}>
+          <span className="text-xs" style={{ color: "#7878a0" }}>
             Status
           </span>
           {data ? (
             <span
               className="text-xs"
               style={{
-                color: data.status === "success" ? "#4CAF50" : data.status === "failed" ? "#ef4444" : "#C9A84C",
+                color: data.status === "success" ? "#4CAF50" : data.status === "failed" ? "#ef4444" : "#ff3ec9",
               }}
             >
               {data.status === "success" ? "✅ Confirmed" : data.status === "failed" ? "❌ Failed" : "⏳ Pending"}
             </span>
           ) : error ? (
-            <span className="text-xs" style={{ color: "#E8E4DC" }}>
+            <span className="text-xs" style={{ color: "#e8e0ff" }}>
               —
             </span>
           ) : (
@@ -590,6 +602,30 @@ function TransactionContent({ item }: { item: Extract<ModalItem, { type: "transa
 // ─── Portfolio Position Content ──────────────────────────────────────────────
 
 function PortfolioPositionContent({ item }: { item: Extract<ModalItem, { type: "portfolio_position" }> }) {
+  const [assetLinks, setAssetLinks] = useState<{ type: string; url: string; name: string }[]>([]);
+
+  useEffect(() => {
+    fetch(`/api/modal/asset?symbol=${encodeURIComponent(item.symbol)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (Array.isArray(d?.links)) setAssetLinks(d.links);
+      })
+      .catch(() => {});
+  }, [item.symbol]);
+
+  const linkLabel = (l: { type: string; url: string; name: string }) => {
+    const t = (l.type || "").toLowerCase();
+    const n = (l.name || "").toLowerCase();
+    if (t === "website" || t === "homepage" || n === "website" || n === "homepage") {
+      try {
+        return new URL(l.url).hostname.replace(/^www\./, "");
+      } catch {
+        return "Website";
+      }
+    }
+    return l.name || l.type || "Link";
+  };
+
   // Derive price per token from balance and USD value
   const pricePerToken = (() => {
     const qty = parseFloat(item.balance);
@@ -603,14 +639,14 @@ function PortfolioPositionContent({ item }: { item: Extract<ModalItem, { type: "
       <ModalHeader label="Position" identifier={item.symbol} />
       <div className="px-5 py-4 space-y-0">
         {/* Token icon + name */}
-        <div className="flex items-center gap-3 pb-3" style={{ borderBottom: "1px solid rgba(201, 168, 76, 0.06)" }}>
+        <div className="flex items-center gap-3 pb-3" style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.06)" }}>
           {item.thumbnail && <img src={item.thumbnail} alt="" className="w-8 h-8 rounded-full" />}
           <div>
-            <span className="font-[family-name:var(--font-cinzel)] text-sm block" style={{ color: "#E8E4DC" }}>
+            <span className="font-[family-name:var(--font-cinzel)] text-sm block" style={{ color: "#e8e0ff" }}>
               {item.tokenName || item.symbol}
             </span>
             {item.protocol && (
-              <span className="text-xs" style={{ color: "#8A8578" }}>
+              <span className="text-xs" style={{ color: "#7878a0" }}>
                 via {item.protocol}
               </span>
             )}
@@ -642,9 +678,9 @@ function PortfolioPositionContent({ item }: { item: Extract<ModalItem, { type: "
         {item.contractAddress && item.contractAddress !== "0x0000000000000000000000000000000000000000" && (
           <div
             className="flex items-center justify-between py-2"
-            style={{ borderBottom: "1px solid rgba(201, 168, 76, 0.06)" }}
+            style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.06)" }}
           >
-            <span className="text-xs" style={{ color: "#8A8578" }}>
+            <span className="text-xs" style={{ color: "#7878a0" }}>
               Contract
             </span>
             <ContractAddressDisplay address={item.contractAddress} chain={item.chain} />
@@ -653,9 +689,9 @@ function PortfolioPositionContent({ item }: { item: Extract<ModalItem, { type: "
 
         {/* External links */}
         <div className="pt-3 flex gap-3 flex-wrap">
-          {item.walletAddress && (
-            <ExplorerLink url={`https://app.zerion.io/${item.walletAddress}/overview`} label="View on Zerion" />
-          )}
+          {assetLinks.map((l, i) => (
+            <ExplorerLink key={i} url={l.url} label={linkLabel(l)} />
+          ))}
           {item.contractAddress &&
             item.contractAddress !== "0x0000000000000000000000000000000000000000" &&
             (() => {
@@ -702,20 +738,20 @@ function ActivityItemContent({ item }: { item: Extract<ModalItem, { type: "activ
     {
       send: "#ef4444",
       receive: "#4CAF50",
-      trade: "#C9A84C",
-      approve: "#8A8578",
+      trade: "#ff3ec9",
+      approve: "#7878a0",
       deposit: "#4CAF50",
       withdraw: "#ef4444",
-      mint: "#C9A84C",
-      bridge: "#C9A84C",
-    }[item.txType] || "#8A8578";
+      mint: "#ff3ec9",
+      bridge: "#ff3ec9",
+    }[item.txType] || "#7878a0";
 
   return (
     <>
       <ModalHeader label={item.txType} identifier={truncatedHash} />
       <div className="px-5 py-4 space-y-0">
         {/* Type badge + Status */}
-        <div className="flex items-center gap-3 pb-3" style={{ borderBottom: "1px solid rgba(201, 168, 76, 0.06)" }}>
+        <div className="flex items-center gap-3 pb-3" style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.06)" }}>
           <span
             className="text-xs px-2 py-0.5 uppercase tracking-wider font-[family-name:var(--font-cinzel)]"
             style={{
@@ -730,7 +766,7 @@ function ActivityItemContent({ item }: { item: Extract<ModalItem, { type: "activ
             <span
               className="text-xs"
               style={{
-                color: data.status === "success" ? "#4CAF50" : data.status === "failed" ? "#ef4444" : "#C9A84C",
+                color: data.status === "success" ? "#4CAF50" : data.status === "failed" ? "#ef4444" : "#ff3ec9",
               }}
             >
               {data.status === "success" ? "✅ Confirmed" : data.status === "failed" ? "❌ Failed" : "⏳ Pending"}
@@ -741,13 +777,13 @@ function ActivityItemContent({ item }: { item: Extract<ModalItem, { type: "activ
         {/* Hash with copy */}
         <div
           className="flex items-center justify-between py-2"
-          style={{ borderBottom: "1px solid rgba(201, 168, 76, 0.06)" }}
+          style={{ borderBottom: "1px solid rgba(255, 62, 201, 0.06)" }}
         >
-          <span className="text-xs" style={{ color: "#8A8578" }}>
+          <span className="text-xs" style={{ color: "#7878a0" }}>
             Hash
           </span>
           <span className="flex items-center">
-            <span className="font-[family-name:var(--font-jetbrains)] text-xs" style={{ color: "#E8E4DC" }}>
+            <span className="font-[family-name:var(--font-jetbrains)] text-xs" style={{ color: "#e8e0ff" }}>
               {truncatedHash}
             </span>
             <CopyButton text={item.hash} />
@@ -828,16 +864,16 @@ function DetailModalOverlay({ item, onClose }: { item: ModalItem; onClose: () =>
         className="w-full max-w-lg relative max-h-[85vh] overflow-y-auto"
         style={{
           backgroundColor: "#0d0d0d",
-          border: "1px solid rgba(201, 168, 76, 0.3)",
+          border: "1px solid rgba(255, 62, 201, 0.3)",
         }}
         onClick={e => e.stopPropagation()}
       >
         {/* Close button */}
         <button
           className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center transition-colors z-10 cursor-pointer"
-          style={{ color: "#8A8578" }}
-          onMouseEnter={e => (e.currentTarget.style.color = "#C9A84C")}
-          onMouseLeave={e => (e.currentTarget.style.color = "#8A8578")}
+          style={{ color: "#7878a0" }}
+          onMouseEnter={e => (e.currentTarget.style.color = "#ff3ec9")}
+          onMouseLeave={e => (e.currentTarget.style.color = "#7878a0")}
           onClick={onClose}
           aria-label="Close"
         >
@@ -854,16 +890,16 @@ function DetailModalOverlay({ item, onClose }: { item: ModalItem; onClose: () =>
         <ModalContent item={item} />
 
         {/* Footer */}
-        <div className="px-5 py-3 flex justify-end" style={{ borderTop: "1px solid rgba(201, 168, 76, 0.1)" }}>
+        <div className="px-5 py-3 flex justify-end" style={{ borderTop: "1px solid rgba(255, 62, 201, 0.1)" }}>
           <button
             className="font-[family-name:var(--font-cinzel)] text-xs tracking-[0.1em] px-5 py-2 transition-colors cursor-pointer"
             style={{
-              border: "1px solid rgba(201, 168, 76, 0.3)",
-              color: "#C9A84C",
+              border: "1px solid rgba(255, 62, 201, 0.3)",
+              color: "#ff3ec9",
               backgroundColor: "transparent",
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.backgroundColor = "rgba(201, 168, 76, 0.1)";
+              e.currentTarget.style.backgroundColor = "rgba(255, 62, 201, 0.1)";
             }}
             onMouseLeave={e => {
               e.currentTarget.style.backgroundColor = "transparent";

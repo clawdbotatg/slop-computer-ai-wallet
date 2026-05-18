@@ -51,6 +51,25 @@ a[href] {
   }
 }
 
+@keyframes slopSlideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.slop-chat-overlay {
+  animation: slopSlideUp 0.22s ease-out;
+}
+
+/* Fade only the very top of the overlay so older messages drift out as they leave */
+.slop-chat-fade {
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 20%, #000 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 20%, #000 100%);
+}
+
 @plugin "daisyui" {
   themes: slop;
 }
@@ -196,59 +215,33 @@ input::placeholder {
   background: rgba(255, 62, 201, 0.55);
 }
 
-/* ─── Slop primary CTA — replaces the gold-btn from the denar fork ──────── */
-.gold-btn {
-  --mx: 50%;
-  --my: 50%;
-  position: relative;
-  background:
-    radial-gradient(
-      circle 600px at var(--mx) var(--my),
-      rgba(255, 95, 220, 0.7) 0%,
-      rgba(255, 62, 201, 0.35) 20%,
-      transparent 50%
-    ),
-    linear-gradient(
-      135deg,
-      #ff3ec9 0%,
-      #c41a96 50%,
-      #7c4dff 100%
-    );
-  transition: filter 0.06s ease, transform 0.1s ease;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.25),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.35),
-    0 2px 12px rgba(255, 62, 201, 0.35);
+/* ─── Slop primary CTA — magenta → purple gradient, no cursor shimmer ──── */
+.slop-btn {
+  background: linear-gradient(135deg, #ff3ec9 0%, #c41a96 50%, #7c4dff 100%);
   color: #06030d !important;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
   font-weight: 700;
   font-family: var(--slop-font-display);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
   border-radius: 0;
-}
-
-.gold-btn:hover:not(:disabled) {
-  filter: brightness(1.1) contrast(1.02);
-  transform: translateY(-1px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.35),
-    0 5px 20px rgba(255, 62, 201, 0.5),
-    0 2px 8px rgba(124, 77, 255, 0.3);
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.35);
 }
 
-.gold-btn:active:not(:disabled) {
-  transform: translateY(1px);
-  filter: brightness(0.92) contrast(1.05);
+.slop-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.slop-btn:active:not(:disabled) {
+  filter: brightness(0.92);
   box-shadow:
     inset 0 2px 6px rgba(0, 0, 0, 0.45),
     inset 0 1px 0 rgba(0, 0, 0, 0.3);
 }
 
-.gold-btn:disabled {
+.slop-btn:disabled {
   cursor: not-allowed;
   filter: brightness(0.55) saturate(0.5);
-  transform: none !important;
 }

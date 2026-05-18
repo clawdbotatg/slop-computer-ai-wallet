@@ -206,7 +206,7 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
         className="mt-3 p-4 space-y-2"
         style={{
           backgroundColor: "#111111",
-          border: "1px solid rgba(201, 168, 76, 0.15)",
+          border: "1px solid rgba(255, 62, 201, 0.15)",
         }}
       >
         {/* Simulation preview */}
@@ -214,18 +214,18 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
           <div className="space-y-2 text-sm">
             {outChanges.map((c, i) => (
               <div key={`out-${i}`} className="flex justify-between items-center">
-                <span className="text-xs" style={{ color: "#8A8578" }}>
+                <span className="text-xs" style={{ color: "#7878a0" }}>
                   You send
                 </span>
                 <AssetChip symbol={c.symbol} amount={c.amount} chain={c.chain || chainName} />
               </div>
             ))}
             {outChanges.length > 0 && inChanges.length > 0 && (
-              <div className="h-px" style={{ backgroundColor: "rgba(201, 168, 76, 0.08)" }} />
+              <div className="h-px" style={{ backgroundColor: "rgba(255, 62, 201, 0.08)" }} />
             )}
             {inChanges.map((c, i) => (
               <div key={`in-${i}`} className="flex justify-between items-center">
-                <span className="text-xs" style={{ color: "#8A8578" }}>
+                <span className="text-xs" style={{ color: "#7878a0" }}>
                   You receive
                 </span>
                 <AssetChip symbol={c.symbol} amount={c.amount} chain={c.chain || chainName} />
@@ -236,21 +236,21 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
 
         {/* Description */}
         {tx.description && (
-          <div className="text-xs" style={{ color: "#8A8578" }}>
+          <div className="text-xs" style={{ color: "#7878a0" }}>
             <ChatMessageRenderer content={tx.description} />
           </div>
         )}
 
         {/* Tx confirmed inline */}
         {txHash && isTxConfirmed && (
-          <div className="text-sm flex items-center gap-1" style={{ color: "#C9A84C" }}>
+          <div className="text-sm flex items-center gap-1" style={{ color: "#ff3ec9" }}>
             ✓ Confirmed —{" "}
             <a
               href={`${explorerBase}${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="underline"
-              style={{ color: "#C9A84C" }}
+              style={{ color: "#ff3ec9" }}
             >
               view tx
             </a>
@@ -258,7 +258,7 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
         )}
 
         {txHash && isTxConfirming && !isTxConfirmed && (
-          <div className="text-sm flex items-center gap-2" style={{ color: "#8A8578" }}>
+          <div className="text-sm flex items-center gap-2" style={{ color: "#7878a0" }}>
             <span className="loading loading-spinner loading-xs"></span>
             Confirming...
           </div>
@@ -280,7 +280,7 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
 
         {/* Execute button */}
         {!txHash && !proposedToMultisig && (
-          <button className="btn btn-sm w-full gold-btn" style={{}} onClick={() => setShowModal(true)}>
+          <button className="btn btn-sm w-full slop-btn" style={{}} onClick={() => setShowModal(true)}>
             <span className="font-[family-name:var(--font-silkscreen)] text-xs tracking-[0.1em] uppercase">
               {embedded.embedded ? "Send to multisig" : "Execute"}
             </span>
@@ -295,13 +295,13 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
             className="modal-box"
             style={{
               backgroundColor: "#111111",
-              border: "1px solid rgba(201, 168, 76, 0.15)",
+              border: "1px solid rgba(255, 62, 201, 0.15)",
             }}
             onClick={e => e.stopPropagation()}
           >
             <h3
               className="font-[family-name:var(--font-cinzel)] text-sm tracking-[0.15em] uppercase mb-6"
-              style={{ color: "#C9A84C" }}
+              style={{ color: "#ff3ec9" }}
             >
               Confirm Transaction
             </h3>
@@ -312,30 +312,30 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
                 className="p-4 space-y-3 mb-4"
                 style={{
                   backgroundColor: "#0a0a0a",
-                  border: "1px solid rgba(201, 168, 76, 0.08)",
+                  border: "1px solid rgba(255, 62, 201, 0.08)",
                 }}
               >
                 {outChanges.map((c, i) => (
                   <div key={`modal-out-${i}`} className="flex justify-between items-center">
-                    <span className="text-sm" style={{ color: "#8A8578" }}>
+                    <span className="text-sm" style={{ color: "#7878a0" }}>
                       You send
                     </span>
                     <AssetChip symbol={c.symbol} amount={c.amount} chain={c.chain || chainName} />
                   </div>
                 ))}
                 {outChanges.length > 0 && inChanges.length > 0 && (
-                  <div className="h-px" style={{ backgroundColor: "rgba(201, 168, 76, 0.08)" }} />
+                  <div className="h-px" style={{ backgroundColor: "rgba(255, 62, 201, 0.08)" }} />
                 )}
                 {inChanges.map((c, i) => (
                   <div key={`modal-in-${i}`} className="flex justify-between items-center">
-                    <span className="text-sm" style={{ color: "#8A8578" }}>
+                    <span className="text-sm" style={{ color: "#7878a0" }}>
                       You receive
                     </span>
                     <AssetChip symbol={c.symbol} amount={c.amount} chain={c.chain || chainName} />
                   </div>
                 ))}
                 {tx.simulation.verified && (
-                  <div className="text-xs text-center mt-1" style={{ color: "rgba(201, 168, 76, 0.6)" }}>
+                  <div className="text-xs text-center mt-1" style={{ color: "rgba(255, 62, 201, 0.6)" }}>
                     ✓ Simulation verified onchain
                   </div>
                 )}
@@ -347,31 +347,31 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
               className="p-4 space-y-3 text-sm mb-4"
               style={{
                 backgroundColor: "#0a0a0a",
-                border: "1px solid rgba(201, 168, 76, 0.08)",
+                border: "1px solid rgba(255, 62, 201, 0.08)",
               }}
             >
               <div className="flex justify-between items-center">
-                <span style={{ color: "#8A8578" }}>From</span>
+                <span style={{ color: "#7878a0" }}>From</span>
                 <AddressChip address={address} />
               </div>
               {!tx.data || tx.data === "0x" ? (
                 <div className="flex justify-between items-center">
-                  <span style={{ color: "#8A8578" }}>To</span>
+                  <span style={{ color: "#7878a0" }}>To</span>
                   <AddressChip address={tx.to} />
                 </div>
               ) : outChanges.length > 0 ? (
                 <div className="flex justify-between items-center">
-                  <span style={{ color: "#8A8578" }}>Contract</span>
+                  <span style={{ color: "#7878a0" }}>Contract</span>
                   <AssetChip symbol={outChanges[0].symbol} chain={outChanges[0].chain || chainName} />
                 </div>
               ) : (
                 <div className="flex justify-between items-center">
-                  <span style={{ color: "#8A8578" }}>To</span>
+                  <span style={{ color: "#7878a0" }}>To</span>
                   <AddressChip address={tx.to} />
                 </div>
               )}
               <div className="flex justify-between items-center">
-                <span style={{ color: "#8A8578" }}>Network</span>
+                <span style={{ color: "#7878a0" }}>Network</span>
                 {chainName ? (
                   <NetworkChip chain={chainName} />
                 ) : (
@@ -381,7 +381,7 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
               {tx.description && (
                 <div
                   className="text-xs pt-2"
-                  style={{ color: "#8A8578", borderTop: "1px solid rgba(201, 168, 76, 0.08)" }}
+                  style={{ color: "#7878a0", borderTop: "1px solid rgba(255, 62, 201, 0.08)" }}
                 >
                   <ChatMessageRenderer content={tx.description} />
                 </div>
@@ -404,7 +404,7 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
             {tx.chainId && currentChainId !== tx.chainId ? (
               <div className="space-y-3">
                 <button
-                  className="btn btn-sm w-full gold-btn"
+                  className="btn btn-sm w-full slop-btn"
                   style={{}}
                   onClick={async () => {
                     setExecError("");
@@ -452,7 +452,7 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
                 <div className="flex justify-end">
                   <button
                     className="btn btn-ghost btn-sm"
-                    style={{ color: "#8A8578" }}
+                    style={{ color: "#7878a0" }}
                     onClick={() => setShowModal(false)}
                   >
                     Cancel
@@ -463,13 +463,13 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
               <div className="flex justify-end gap-3">
                 <button
                   className="btn btn-ghost btn-sm"
-                  style={{ color: "#8A8578" }}
+                  style={{ color: "#7878a0" }}
                   onClick={() => setShowModal(false)}
                   disabled={isExecuting}
                 >
                   Cancel
                 </button>
-                <button className="btn btn-sm gold-btn" style={{}} onClick={handleExecute} disabled={isExecuting}>
+                <button className="btn btn-sm slop-btn" style={{}} onClick={handleExecute} disabled={isExecuting}>
                   {isExecuting ? (
                     <>
                       <span className="loading loading-spinner loading-sm"></span>

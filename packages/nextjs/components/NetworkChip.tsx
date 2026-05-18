@@ -58,8 +58,8 @@ export default function NetworkChip({ chain }: NetworkChipProps) {
       onClick={() => openModal({ type: "network", chain })}
       style={{
         backgroundColor: "#111111",
-        border: "1px solid rgba(201, 168, 76, 0.15)",
-        color: "#8A8578",
+        border: "1px solid rgba(255, 62, 201, 0.15)",
+        color: "#7878a0",
       }}
     >
       {iconUrl ? (
@@ -74,7 +74,7 @@ export default function NetworkChip({ chain }: NetworkChipProps) {
       ) : (
         <span
           className="w-3.5 h-3.5 rounded-full flex-shrink-0"
-          style={{ backgroundColor: "rgba(201, 168, 76, 0.2)" }}
+          style={{ backgroundColor: "rgba(255, 62, 201, 0.2)" }}
         />
       )}
       <span>{displayName}</span>
