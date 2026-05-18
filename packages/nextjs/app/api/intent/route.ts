@@ -1130,7 +1130,7 @@ Always call this before saying you can't find something. It uses server-side tok
 
         // Fetch current misses
         const getRes = await fetch(`https://api.github.com/gists/${gistId}`, {
-          headers: { Authorization: `Bearer ${token}`, "User-Agent": "denarai" },
+          headers: { Authorization: `Bearer ${token}`, "User-Agent": "slop-ai-wallet" },
         });
         const gist = await getRes.json();
         const current = JSON.parse(gist?.files?.["misses.json"]?.content ?? "[]");
@@ -1149,7 +1149,7 @@ Always call this before saying you can't find something. It uses server-side tok
           method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
-            "User-Agent": "denarai",
+            "User-Agent": "slop-ai-wallet",
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ files: { "misses.json": { content: JSON.stringify(trimmed, null, 2) } } }),
@@ -1510,9 +1510,6 @@ export async function POST(req: NextRequest) {
       : "";
 
     // recentMessages is passed as proper OpenAI message objects below — not embedded in the prompt
-    // CV balance summary removed in slop fork — no clawdviction context injected.
-    const cvBalanceSummary = "";
-
     // userPrompt is no longer used — wallet context is injected as a priming message pair in loopMessages below
 
     const client = new OpenAI({
@@ -1824,7 +1821,7 @@ export async function POST(req: NextRequest) {
       // Inject wallet context as a system-style user turn so it doesn't pollute history
       {
         role: "user",
-        content: `User's wallet address: ${address}\nConnected chain ID: ${userChainId}${portfolioSummary}${defiSummary}${cvBalanceSummary}${activitySummary}\n\n[Context injected — ready for conversation]`,
+        content: `User's wallet address: ${address}\nConnected chain ID: ${userChainId}${portfolioSummary}${defiSummary}${activitySummary}\n\n[Context injected — ready for conversation]`,
       },
       {
         role: "assistant",
