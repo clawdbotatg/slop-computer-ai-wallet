@@ -388,6 +388,10 @@ const Home: NextPage = () => {
 
   // Resume an in-flight request after page reload: if the last persisted
   // message is the user's (no assistant response yet), re-fire the intent.
+  // Run at most ONCE per address+auth load. Depending on `messages` here
+  // would re-fire any time the trailing message becomes a user one again —
+  // e.g. when the user clicks [x] to dismiss the assistant reply, which
+  // was triggering a phantom AI response.
   const resumedRef = useRef(false);
   useEffect(() => {
     resumedRef.current = false;
@@ -395,12 +399,13 @@ const Home: NextPage = () => {
   useEffect(() => {
     if (resumedRef.current) return;
     if (!address || !isAuthed || isProcessing) return;
+    resumedRef.current = true;
     if (messages.length === 0) return;
     const last = messages[messages.length - 1];
     if (last.role !== "user") return;
-    resumedRef.current = true;
     processIntent(last.content, messages);
-  }, [address, isAuthed, messages, isProcessing, processIntent]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, isAuthed]);
 
   // ─── Computed ────────────────────────────────────────────────────────────
 

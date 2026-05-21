@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
     const walletPositions: ZerionPosition[] = walletData.data || [];
 
     const assets = walletPositions
-      .filter(p => p.attributes.flags.displayable && (p.attributes.value || 0) > 1)
+      .filter(p => p.attributes.flags.displayable && (p.attributes.value || 0) > 0.01)
       .map(mapPosition)
       .sort((a, b) => parseFloat(b.balanceUsd) - parseFloat(a.balanceUsd));
 
@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
         const defiData = await defiRes.json();
         const raw: ZerionPosition[] = defiData.data || [];
         defiPositions = raw
-          .filter(p => p.attributes.flags.displayable && (p.attributes.value || 0) > 1)
+          .filter(p => p.attributes.flags.displayable && (p.attributes.value || 0) > 0.01)
           .map(mapPosition)
           .sort((a, b) => parseFloat(b.balanceUsd) - parseFloat(a.balanceUsd));
         totalPortfolioUsd = defiPositions.reduce((sum, p) => sum + parseFloat(p.balanceUsd), 0).toFixed(2);
