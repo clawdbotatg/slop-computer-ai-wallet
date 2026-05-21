@@ -401,7 +401,7 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
               </div>
             )}
 
-            {tx.chainId && currentChainId !== tx.chainId ? (
+            {!embedded.embedded && tx.chainId && currentChainId !== tx.chainId ? (
               <div className="space-y-3">
                 <button
                   className="btn btn-sm w-full slop-btn"
