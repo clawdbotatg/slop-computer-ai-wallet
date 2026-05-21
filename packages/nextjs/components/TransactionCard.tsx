@@ -278,11 +278,21 @@ const TransactionCard = ({ tx, address, onTxHash, onConfirmed }: TransactionCard
           </div>
         )}
 
-        {/* Execute button */}
+        {/* Execute button. In embedded mode the EOA confirmation modal
+         *  is dead weight — slop-computer-live shows the full tx detail
+         *  in its Transactions tab before signers approve, so the modal
+         *  was just an extra click that users were missing. Fire
+         *  handleExecute directly; the modal stays for non-embedded
+         *  (standalone) mode where the EOA actually signs. */}
         {!txHash && !proposedToMultisig && (
-          <button className="btn btn-sm w-full slop-btn" style={{}} onClick={() => setShowModal(true)}>
+          <button
+            className="btn btn-sm w-full slop-btn"
+            style={{}}
+            onClick={() => (embedded.embedded ? handleExecute() : setShowModal(true))}
+            disabled={isExecuting}
+          >
             <span className="font-[family-name:var(--font-silkscreen)] text-xs tracking-[0.1em] uppercase">
-              {embedded.embedded ? "Send to multisig" : "Execute"}
+              {isExecuting ? "Sending…" : embedded.embedded ? "Send to multisig" : "Execute"}
             </span>
           </button>
         )}

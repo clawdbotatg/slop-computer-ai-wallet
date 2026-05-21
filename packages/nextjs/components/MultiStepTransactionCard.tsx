@@ -595,7 +595,16 @@ const MultiStepTransactionCard = ({ tx, onComplete, onConfirmed }: MultiStepTran
         )}
 
         {state === "idle" && (!needsSwitch || embedded.embedded) && !proposedStep1 && (
-          <button className="btn btn-sm w-full slop-btn" style={{}} onClick={() => setShowModal(true)}>
+          // Skip the confirm modal in embedded mode — slop-computer-live's
+          // Transactions tab shows the tx for signing review, so the extra
+          // EOA-style confirm step here was an easy-to-miss click. Fire
+          // handleExecuteStep directly; the modal remains for standalone
+          // (non-embedded) mode.
+          <button
+            className="btn btn-sm w-full slop-btn"
+            style={{}}
+            onClick={() => (embedded.embedded ? handleExecuteStep(step1, 1) : setShowModal(true))}
+          >
             <span className="font-[family-name:var(--font-silkscreen)] text-xs tracking-[0.1em] uppercase">
               {embedded.embedded ? `Send to multisig: ${step1?.label || "Step 1"}` : step1?.label || "Execute Step 1"}
             </span>
