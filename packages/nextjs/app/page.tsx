@@ -176,6 +176,10 @@ const Home: NextPage = () => {
   const [pendingActivities, setPendingActivities] = useState<PendingActivity[]>([]);
   const [highlightedTokens, setHighlightedTokens] = useState<Set<string>>(new Set());
   const [mobileTab, setMobileTab] = useState<"assets" | "activity">("assets");
+  // Hide the chat overlay when the user is browsing the columns underneath
+  // (assets / activity). Refocusing the input brings it back. Lets the user
+  // see what's covered without dismissing chat history.
+  const [chatHidden, setChatHidden] = useState(false);
 
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
@@ -378,6 +382,7 @@ const Home: NextPage = () => {
     const next = [...messages, userMsg];
     setMessages(next);
     setMessage("");
+    setChatHidden(false);
     await processIntent(message, next);
   };
 
@@ -491,7 +496,10 @@ const Home: NextPage = () => {
               })}
             </div>
 
-            <div className="flex flex-row gap-4 h-[calc(100vh-244px)] md:h-[calc(100vh-200px)]">
+            <div
+              className="flex flex-row gap-4 h-[calc(100vh-244px)] md:h-[calc(100vh-200px)]"
+              onClick={() => setChatHidden(true)}
+            >
               {/* LEFT: Your Assets */}
               <div
                 className={`${mobileTab === "assets" ? "" : "hidden"} md:block flex-1 min-w-0 space-y-4 overflow-y-auto`}
@@ -768,7 +776,7 @@ const Home: NextPage = () => {
             )}
 
             {/* CHAT OVERLAY — content-driven height, transparent, fades older messages */}
-            {(messages.length > 0 || isProcessing) && (
+            {(messages.length > 0 || isProcessing) && !chatHidden && (
               <div className="slop-chat-overlay fixed inset-x-0 z-40 pointer-events-none" style={{ bottom: "64px" }}>
                 <div className="max-w-7xl mx-auto px-5">
                   <div
@@ -897,6 +905,7 @@ const Home: NextPage = () => {
                   }}
                   value={message}
                   onChange={e => setMessage(e.target.value)}
+                  onFocus={() => setChatHidden(false)}
                   onKeyDown={e => e.key === "Enter" && !isProcessing && (!mounted || isAuthed) && handleSubmit()}
                   disabled={isProcessing || (mounted && !isAuthed)}
                 />
