@@ -1513,8 +1513,8 @@ export async function POST(req: NextRequest) {
     // userPrompt is no longer used — wallet context is injected as a priming message pair in loopMessages below
 
     const client = new OpenAI({
-      apiKey: process.env.VENICE_API_KEY,
-      baseURL: "https://api.venice.ai/api/v1",
+      apiKey: process.env.SLOP_COMPUTER_AI_WALLET,
+      baseURL: "https://llm.bankr.bot/v1",
     });
 
     // Tool schemas for OpenAI format
@@ -1836,7 +1836,7 @@ export async function POST(req: NextRequest) {
     let finalText = "";
     for (let step = 0; step < 15; step++) {
       const completion = await client.chat.completions.create({
-        model: "claude-opus-4-6",
+        model: "claude-opus-4.7",
         messages: loopMessages,
         tools: openAiTools,
         tool_choice: "auto",
